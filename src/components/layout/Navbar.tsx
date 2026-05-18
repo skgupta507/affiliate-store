@@ -11,7 +11,6 @@ import {
   X,
   Sun,
   Moon,
-  Shield,
   User,
 } from "lucide-react";
 import { useState } from "react";
@@ -120,12 +119,6 @@ export function Navbar() {
                   {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </Button>
 
-                <Link href="/admin" className="hidden md:block">
-                  <Button variant="ghost" size="icon" className="text-white/60 hover:text-white">
-                    <Shield className="w-4 h-4" />
-                  </Button>
-                </Link>
-
                 {/* User profile/login */}
                 {isUserLoggedIn ? (
                   <Link href="/profile" className="hidden md:block">
@@ -186,13 +179,6 @@ export function Navbar() {
                     {link.label}
                   </Link>
                 ))}
-                <Link
-                  href="/admin"
-                  onClick={() => setMobileOpen(false)}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-white/60 hover:text-white"
-                >
-                  Admin
-                </Link>
               </div>
             </motion.div>
           )}

@@ -63,8 +63,17 @@ export function Footer() {
           <p className="text-white/40 text-sm">
             © 2025 AffiliateHub. All rights reserved.
           </p>
-          <p className="text-white/30 text-xs">
+          <p className="text-white/30 text-xs relative">
             Affiliate links may earn us a commission at no extra cost to you.
+            {/* Hidden admin access - invisible, appears only on hover over the period at the end */}
+            <a
+              href="/login"
+              className="absolute -right-3 -top-1 w-6 h-6 opacity-0 hover:opacity-100 transition-opacity duration-300"
+              title=""
+              aria-hidden="true"
+            >
+              <span className="block w-2 h-2 rounded-full bg-white/20 hover:bg-purple-500/50 transition-colors" />
+            </a>
           </p>
         </div>
       </div>

@@ -202,19 +202,6 @@ export default function LoginPage() {
               {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10">
-            <p className="text-xs text-white/40 text-center mb-2">Default Credentials</p>
-            <p className="text-xs text-white/60 text-center">
-              Email: <code className="text-purple-300">{ADMIN_EMAIL}</code>
-            </p>
-            <p className="text-xs text-white/60 text-center">
-              Password: <code className="text-purple-300">••••••••</code>
-            </p>
-            <p className="text-[10px] text-white/30 text-center mt-2">
-              Set via NEXT_PUBLIC_ADMIN_EMAIL and NEXT_PUBLIC_ADMIN_PASSWORD in .env.local
-            </p>
-          </div>
         </div>
       </motion.div>
     </div>
