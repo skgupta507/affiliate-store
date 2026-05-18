@@ -28,9 +28,19 @@ export interface Category {
 }
 
 export interface User {
+  uid?: string;
   email: string;
   isAdmin: boolean;
   displayName?: string;
+  photoURL?: string;
+  provider?: "email" | "google" | "local";
+}
+
+export interface Watchlist {
+  id: string;
+  name: string;
+  productIds: string[];
+  createdAt: string;
 }
 
 export interface MetadataResult {

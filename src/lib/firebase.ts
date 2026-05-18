@@ -1,0 +1,53 @@
+"use client";
+
+import { initializeApp, getApps } from "firebase/app";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+  fetchSignInMethodsForEmail,
+  linkWithCredential,
+  EmailAuthProvider,
+  type User as FirebaseUser,
+} from "firebase/auth";
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+};
+
+// Only initialize if config is provided
+const hasFirebaseConfig = firebaseConfig.apiKey && firebaseConfig.authDomain;
+
+const app = hasFirebaseConfig && getApps().length === 0
+  ? initializeApp(firebaseConfig)
+  : getApps()[0] || null;
+
+const auth = app ? getAuth(app) : null;
+const googleProvider = new GoogleAuthProvider();
+
+export {
+  auth,
+  googleProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+  fetchSignInMethodsForEmail,
+  linkWithCredential,
+  EmailAuthProvider,
+  hasFirebaseConfig,
+};
+
+export type { FirebaseUser };

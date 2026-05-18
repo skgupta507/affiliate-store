@@ -2,7 +2,8 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Product, Category, ThemeMode, User } from "@/types";
+import { Product, Category, ThemeMode, User, Watchlist } from "@/types";
+import { generateId } from "@/lib/utils";
 
 interface AppState {
   // Products
@@ -18,9 +19,17 @@ interface AppState {
   updateCategory: (id: string, category: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
 
-  // Wishlist
+  // Wishlist (simple favorites)
   wishlist: string[];
   toggleWishlist: (productId: string) => void;
+
+  // Watchlists (named collections)
+  watchlists: Watchlist[];
+  createWatchlist: (name: string) => void;
+  deleteWatchlist: (id: string) => void;
+  renameWatchlist: (id: string, name: string) => void;
+  addToWatchlist: (watchlistId: string, productId: string) => void;
+  removeFromWatchlist: (watchlistId: string, productId: string) => void;
 
   // Recently Viewed
   recentlyViewed: string[];
@@ -30,11 +39,17 @@ interface AppState {
   theme: ThemeMode;
   toggleTheme: () => void;
 
-  // Auth
+  // Auth (admin)
   isAuthenticated: boolean;
   user: User | null;
   login: (user: User) => void;
   logout: () => void;
+
+  // User Auth (Firebase)
+  currentUser: User | null;
+  isUserLoggedIn: boolean;
+  setCurrentUser: (user: User | null) => void;
+  updateUserProfile: (updates: Partial<User>) => void;
 
   // Search
   searchQuery: string;
@@ -98,6 +113,40 @@ export const useStore = create<AppState>()(
             : [...state.wishlist, productId],
         })),
 
+      // Watchlists
+      watchlists: [],
+      createWatchlist: (name) =>
+        set((state) => ({
+          watchlists: [
+            ...state.watchlists,
+            { id: generateId(), name, productIds: [], createdAt: new Date().toISOString() },
+          ],
+        })),
+      deleteWatchlist: (id) =>
+        set((state) => ({
+          watchlists: state.watchlists.filter((w) => w.id !== id),
+        })),
+      renameWatchlist: (id, name) =>
+        set((state) => ({
+          watchlists: state.watchlists.map((w) => (w.id === id ? { ...w, name } : w)),
+        })),
+      addToWatchlist: (watchlistId, productId) =>
+        set((state) => ({
+          watchlists: state.watchlists.map((w) =>
+            w.id === watchlistId && !w.productIds.includes(productId)
+              ? { ...w, productIds: [...w.productIds, productId] }
+              : w
+          ),
+        })),
+      removeFromWatchlist: (watchlistId, productId) =>
+        set((state) => ({
+          watchlists: state.watchlists.map((w) =>
+            w.id === watchlistId
+              ? { ...w, productIds: w.productIds.filter((id) => id !== productId) }
+              : w
+          ),
+        })),
+
       // Recently Viewed
       recentlyViewed: [],
       addToRecentlyViewed: (productId) =>
@@ -113,11 +162,21 @@ export const useStore = create<AppState>()(
           theme: state.theme === "dark" ? "light" : "dark",
         })),
 
-      // Auth
+      // Auth (admin)
       isAuthenticated: false,
       user: null,
       login: (user) => set({ isAuthenticated: true, user }),
       logout: () => set({ isAuthenticated: false, user: null }),
+
+      // User Auth
+      currentUser: null,
+      isUserLoggedIn: false,
+      setCurrentUser: (user) =>
+        set({ currentUser: user, isUserLoggedIn: !!user }),
+      updateUserProfile: (updates) =>
+        set((state) => ({
+          currentUser: state.currentUser ? { ...state.currentUser, ...updates } : null,
+        })),
 
       // Search
       searchQuery: "",
@@ -129,10 +188,13 @@ export const useStore = create<AppState>()(
         products: state.products,
         categories: state.categories,
         wishlist: state.wishlist,
+        watchlists: state.watchlists,
         recentlyViewed: state.recentlyViewed,
         theme: state.theme,
         isAuthenticated: state.isAuthenticated,
         user: state.user,
+        currentUser: state.currentUser,
+        isUserLoggedIn: state.isUserLoggedIn,
       }),
     }
   )

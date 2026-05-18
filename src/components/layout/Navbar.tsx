@@ -12,6 +12,7 @@ import {
   Sun,
   Moon,
   Shield,
+  User,
 } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
@@ -29,7 +30,7 @@ const navLinks = [
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-  const { theme, toggleTheme, wishlist, searchQuery, setSearchQuery } = useStore();
+  const { theme, toggleTheme, wishlist, searchQuery, setSearchQuery, isUserLoggedIn, currentUser } = useStore();
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
@@ -124,6 +125,29 @@ export function Navbar() {
                     <Shield className="w-4 h-4" />
                   </Button>
                 </Link>
+
+                {/* User profile/login */}
+                {isUserLoggedIn ? (
+                  <Link href="/profile" className="hidden md:block">
+                    {currentUser?.photoURL ? (
+                      <img
+                        src={currentUser.photoURL}
+                        alt="Profile"
+                        className="w-8 h-8 rounded-full object-cover border border-white/20 hover:border-purple-500/50 transition-all"
+                      />
+                    ) : (
+                      <Button variant="ghost" size="icon" className="text-white/60 hover:text-white">
+                        <User className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </Link>
+                ) : (
+                  <Link href="/user-login" className="hidden md:block">
+                    <Button variant="ghost" size="sm" className="text-white/60 hover:text-white gap-1">
+                      <User className="w-4 h-4" /> Login
+                    </Button>
+                  </Link>
+                )}
 
                 {/* Mobile menu toggle */}
                 <Button
