@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Trash2, Edit, ExternalLink, Star, Eye } from "lucide-react";
+import { Search, Trash2, Edit, ExternalLink, Star, Eye, X, Save } from "lucide-react";
 import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +20,23 @@ import { formatPrice } from "@/lib/utils";
 import { Product } from "@/types";
 
 export function AdminProducts() {
-  const { products, deleteProduct, updateProduct } = useStore();
+  const { products, deleteProduct, updateProduct, categories } = useStore();
   const { success } = useToast();
   const [search, setSearch] = useState("");
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+
+  // Edit form state
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editImage, setEditImage] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editOriginalPrice, setEditOriginalPrice] = useState("");
+  const [editRating, setEditRating] = useState("");
+  const [editFeatured, setEditFeatured] = useState(false);
+  const [editTrending, setEditTrending] = useState(false);
 
   const filtered = products.filter(
     (p) =>
@@ -31,6 +44,43 @@ export function AdminProducts() {
       p.category.toLowerCase().includes(search.toLowerCase()) ||
       p.platform.toLowerCase().includes(search.toLowerCase())
   );
+
+  const openEditDialog = (product: Product) => {
+    setEditProduct(product);
+    setEditTitle(product.title);
+    setEditDescription(product.description);
+    setEditImage(product.image);
+    setEditUrl(product.affiliateUrl);
+    setEditCategory(product.category);
+    setEditTags(product.tags.join(", "));
+    setEditPrice(product.price?.toString() || "");
+    setEditOriginalPrice(product.originalPrice?.toString() || "");
+    setEditRating(product.rating?.toString() || "");
+    setEditFeatured(product.isFeatured);
+    setEditTrending(product.isTrending);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editProduct) return;
+    if (!editTitle.trim()) return;
+
+    updateProduct(editProduct.id, {
+      title: editTitle.trim(),
+      description: editDescription.trim(),
+      image: editImage.trim(),
+      affiliateUrl: editUrl.trim(),
+      category: editCategory,
+      tags: editTags.split(",").map((t) => t.trim()).filter(Boolean),
+      price: editPrice ? parseFloat(editPrice) : undefined,
+      originalPrice: editOriginalPrice ? parseFloat(editOriginalPrice) : undefined,
+      rating: editRating ? parseFloat(editRating) : undefined,
+      isFeatured: editFeatured,
+      isTrending: editTrending,
+    });
+
+    success("Product updated", `"${editTitle.trim()}" has been saved.`);
+    setEditProduct(null);
+  };
 
   const handleDelete = (id: string, title: string) => {
     if (confirm(`Delete "${title}"? This cannot be undone.`)) {
@@ -43,14 +93,6 @@ export function AdminProducts() {
     updateProduct(product.id, { isFeatured: !product.isFeatured });
     success(
       product.isFeatured ? "Removed from featured" : "Marked as featured",
-      product.title
-    );
-  };
-
-  const handleToggleTrending = (product: Product) => {
-    updateProduct(product.id, { isTrending: !product.isTrending });
-    success(
-      product.isTrending ? "Removed from trending" : "Marked as trending",
       product.title
     );
   };
@@ -140,6 +182,15 @@ export function AdminProducts() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => openEditDialog(product)}
+                      className="h-8 w-8 text-white/30 hover:text-blue-400"
+                      title="Edit product"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleToggleFeatured(product)}
                       className={`h-8 w-8 ${product.isFeatured ? "text-purple-400" : "text-white/30"}`}
                       title="Toggle featured"
@@ -171,6 +222,153 @@ export function AdminProducts() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={!!editProduct} onOpenChange={(open) => !open && setEditProduct(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>
+              Update the product details below and click save.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Title *</label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Product title"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Description</label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={3}
+                className="flex w-full rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Image URL</label>
+              <div className="flex gap-2">
+                <Input
+                  value={editImage}
+                  onChange={(e) => setEditImage(e.target.value)}
+                  placeholder="https://..."
+                  className="flex-1"
+                />
+                {editImage && (
+                  <div className="w-10 h-10 rounded-lg border border-white/10 overflow-hidden shrink-0">
+                    <img src={editImage} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Affiliate URL</label>
+              <Input
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Category</label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="flex h-10 w-full rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                >
+                  <option value="">Select category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Tags (comma separated)</label>
+                <Input
+                  value={editTags}
+                  onChange={(e) => setEditTags(e.target.value)}
+                  placeholder="tag1, tag2"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Price (₹)</label>
+                <Input
+                  type="number"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  placeholder="999"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Original Price (₹)</label>
+                <Input
+                  type="number"
+                  value={editOriginalPrice}
+                  onChange={(e) => setEditOriginalPrice(e.target.value)}
+                  placeholder="1499"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Rating (1-5)</label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  value={editRating}
+                  onChange={(e) => setEditRating(e.target.value)}
+                  placeholder="4.5"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editFeatured}
+                  onChange={(e) => setEditFeatured(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500"
+                />
+                <span className="text-sm text-white/70">Featured</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editTrending}
+                  onChange={(e) => setEditTrending(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500"
+                />
+                <span className="text-sm text-white/70">Trending</span>
+              </label>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button onClick={handleSaveEdit} className="flex-1 gap-2">
+                <Save className="w-4 h-4" /> Save Changes
+              </Button>
+              <Button variant="outline" onClick={() => setEditProduct(null)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
