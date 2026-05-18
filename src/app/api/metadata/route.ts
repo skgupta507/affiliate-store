@@ -11,97 +11,190 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "URL is required" }, { status: 400 });
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    // Strategy 1: Try fetching via public OG metadata APIs (most reliable from datacenter IPs)
+    const metaFromApi = await fetchViaMetadataApi(url);
+    if (metaFromApi) {
+      return NextResponse.json(metaFromApi);
+    }
 
-    let response: Response;
+    // Strategy 2: Direct fetch with multiple user agents
+    const html = await directFetch(url);
+    if (html) {
+      return processHtml(html, url);
+    }
+
+    // Strategy 3: Try via allorigins proxy
+    const proxyHtml = await fetchViaProxy(url);
+    if (proxyHtml) {
+      return processHtml(proxyHtml, url);
+    }
+
+    return NextResponse.json(
+      { success: false, error: "Could not fetch product details. The site may be blocking server requests. Please enter details manually." },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: "An unexpected error occurred. Please enter details manually." },
+      { status: 200 }
+    );
+  }
+}
+
+// --- Strategy 1: Public metadata extraction APIs ---
+
+async function fetchViaMetadataApi(url: string): Promise<any | null> {
+  // Try jsonlink.io (free OG metadata API)
+  try {
+    const apiUrl = `https://jsonlink.io/api/extract?url=${encodeURIComponent(url)}`;
+    const res = await fetch(apiUrl, { signal: AbortSignal.timeout(10000) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.title || data.description || data.images?.length) {
+        const platform = detectPlatform(url);
+        return {
+          success: true,
+          title: data.title || undefined,
+          description: data.description || undefined,
+          image: data.images?.[0] || undefined,
+          price: undefined, // These APIs don't extract price
+          originalPrice: undefined,
+          category: inferCategoryFromText(data.title || "", data.description || ""),
+          tags: extractTagsFromText(data.title, data.description),
+          rating: undefined,
+          reviewCount: undefined,
+          platform,
+          siteName: data.domain || undefined,
+          resolvedUrl: data.url || url,
+        };
+      }
+    }
+  } catch {}
+
+  // Try opengraph.io style (via allorigins as proxy to og scraper)
+  try {
+    const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}`;
+    const res = await fetch(apiUrl, { signal: AbortSignal.timeout(10000) });
+    if (res.ok) {
+      const json = await res.json();
+      const data = json.data;
+      if (data && (data.title || data.description || data.image)) {
+        const platform = detectPlatform(url);
+        return {
+          success: true,
+          title: data.title || undefined,
+          description: data.description || undefined,
+          image: data.image?.url || undefined,
+          price: undefined,
+          originalPrice: undefined,
+          category: inferCategoryFromText(data.title || "", data.description || ""),
+          tags: extractTagsFromText(data.title, data.description),
+          rating: undefined,
+          reviewCount: undefined,
+          platform,
+          siteName: data.publisher || undefined,
+          resolvedUrl: data.url || url,
+        };
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
+// --- Strategy 2: Direct fetch with retries ---
+
+async function directFetch(url: string): Promise<string | null> {
+  const userAgents = [
+    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Twitterbot/1.0",
+  ];
+
+  for (const ua of userAgents) {
     try {
-      response = await fetch(url, {
+      const res = await fetch(url, {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+          "User-Agent": ua,
           Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           "Accept-Language": "en-US,en;q=0.9",
           "Accept-Encoding": "identity",
         },
         redirect: "follow",
-        signal: controller.signal,
+        signal: AbortSignal.timeout(12000),
       });
-    } catch (fetchErr: any) {
-      clearTimeout(timeout);
-      if (fetchErr.name === "AbortError") {
-        return NextResponse.json(
-          { success: false, error: "Request timed out. Try a different URL or enter details manually." },
-          { status: 200 }
-        );
-      }
-      // Retry with a simpler user agent
-      try {
-        response = await fetch(url, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-            Accept: "text/html",
-          },
-          redirect: "follow",
-        });
-      } catch {
-        return NextResponse.json(
-          { success: false, error: "Could not connect to the URL. Please check the link and try again." },
-          { status: 200 }
-        );
-      }
-    } finally {
-      clearTimeout(timeout);
-    }
 
-    if (!response!.ok) {
-      return NextResponse.json(
-        { success: false, error: `The website returned an error (status ${response!.status}). Try pasting the full product page URL.` },
-        { status: 200 }
-      );
-    }
-
-    // Read up to 200KB to capture product data that may be further down the page
-    const reader = response!.body?.getReader();
-    if (!reader) {
-      // Fallback: try to get text directly
-      try {
-        const text = await response!.text();
-        const html = text.slice(0, 200 * 1024);
-        return processHtml(html, response!.url);
-      } catch {
-        return NextResponse.json({ success: false, error: "No response body" }, { status: 200 });
+      if (res.ok) {
+        const text = await res.text();
+        if (text.length > 500) return text.slice(0, 200 * 1024);
       }
-    }
-
-    let html = "";
-    const decoder = new TextDecoder();
-    const maxBytes = 200 * 1024;
-    let bytesRead = 0;
-
-    try {
-      while (bytesRead < maxBytes) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        html += decoder.decode(value, { stream: true });
-        bytesRead += value.length;
-      }
-      reader.cancel().catch(() => {});
     } catch {
-      // Partial read is fine, continue with what we have
+      continue;
     }
-
-    if (!html) {
-      return NextResponse.json({ success: false, error: "Empty response from website." }, { status: 200 });
-    }
-
-    return processHtml(html, response!.url);
-  } catch (error: any) {
-    const message = error?.name === "AbortError"
-      ? "Request timed out. The site may be blocking automated requests."
-      : "Failed to fetch metadata: " + (error?.message || "Unknown error");
-    return NextResponse.json({ success: false, error: message }, { status: 200 });
   }
+
+  return null;
+}
+
+// --- Strategy 3: CORS proxy ---
+
+async function fetchViaProxy(url: string): Promise<string | null> {
+  const proxies = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  ];
+
+  for (const proxyUrl of proxies) {
+    try {
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+      if (res.ok) {
+        const text = await res.text();
+        if (text.length > 500) return text.slice(0, 200 * 1024);
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+// --- Helpers for metadata API results ---
+
+function inferCategoryFromText(title: string, description: string): string | undefined {
+  const text = (title + " " + description).toLowerCase();
+  const map: [string, string][] = [
+    ["phone", "Electronics"], ["laptop", "Electronics"], ["headphone", "Electronics"],
+    ["earbuds", "Electronics"], ["tablet", "Electronics"], ["camera", "Electronics"],
+    ["watch", "Electronics"], ["speaker", "Electronics"], ["charger", "Electronics"],
+    ["shirt", "Fashion"], ["dress", "Fashion"], ["shoes", "Fashion"], ["jacket", "Fashion"],
+    ["jeans", "Fashion"], ["sneaker", "Fashion"], ["kurta", "Fashion"],
+    ["kitchen", "Home & Kitchen"], ["furniture", "Home & Kitchen"], ["appliance", "Home & Kitchen"],
+    ["book", "Books"], ["novel", "Books"],
+    ["sport", "Sports"], ["fitness", "Sports"], ["gym", "Sports"],
+    ["beauty", "Beauty"], ["skincare", "Beauty"], ["makeup", "Beauty"],
+    ["toy", "Toys"], ["game", "Toys"],
+    ["car", "Automotive"], ["bike", "Automotive"],
+  ];
+  for (const [keyword, category] of map) {
+    if (text.includes(keyword)) return category;
+  }
+  return undefined;
+}
+
+function extractTagsFromText(title?: string, description?: string): string[] {
+  const tags: Set<string> = new Set();
+  const text = ((title || "") + " " + (description || "")).toLowerCase();
+  const words = text.split(/[\s,\-|/]+/);
+  const stopWords = new Set(["the", "a", "an", "and", "or", "for", "with", "in", "on", "at", "to", "of", "by", "is", "it", "its", "from", "buy", "online", "india", "best", "new", "free", "price", "this", "that", "your", "you", "are", "was", "were", "been", "have", "has", "had", "will", "can", "may"]);
+  words.forEach((w) => {
+    const clean = w.replace(/[^a-z0-9]/g, "");
+    if (clean.length > 2 && clean.length < 20 && !stopWords.has(clean)) {
+      tags.add(clean);
+    }
+  });
+  return Array.from(tags).slice(0, 8);
 }
 
 function processHtml(html: string, finalUrl: string) {
