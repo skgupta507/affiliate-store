@@ -306,13 +306,13 @@ export default function HomePage() {
             <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
               <Sparkles className="w-10 h-10 text-purple-400/50" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-3">No Products Yet</h2>
+            <h2 className="text-2xl font-bold text-white mb-3">Coming Soon</h2>
             <p className="text-white/50 mb-6">
-              Head to the admin dashboard to add your first affiliate product.
+              We&apos;re curating the best deals for you. Check back soon for amazing products!
             </p>
-            <Link href="/admin">
+            <Link href="/categories">
               <Button size="lg" className="gap-2">
-                Go to Admin <ArrowRight className="w-4 h-4" />
+                Browse Categories <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>

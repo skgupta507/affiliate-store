@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,36 +11,67 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "URL is required" }, { status: 400 });
     }
 
-    // Follow redirects (handles shortened URLs like amzn.in)
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
-        "Accept-Encoding": "identity",
-        "Cache-Control": "no-cache",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Upgrade-Insecure-Requests": "1",
-      },
-      redirect: "follow",
-      signal: AbortSignal.timeout(15000),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
-    if (!response.ok) {
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Encoding": "identity",
+        },
+        redirect: "follow",
+        signal: controller.signal,
+      });
+    } catch (fetchErr: any) {
+      clearTimeout(timeout);
+      if (fetchErr.name === "AbortError") {
+        return NextResponse.json(
+          { success: false, error: "Request timed out. Try a different URL or enter details manually." },
+          { status: 200 }
+        );
+      }
+      // Retry with a simpler user agent
+      try {
+        response = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            Accept: "text/html",
+          },
+          redirect: "follow",
+        });
+      } catch {
+        return NextResponse.json(
+          { success: false, error: "Could not connect to the URL. Please check the link and try again." },
+          { status: 200 }
+        );
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!response!.ok) {
       return NextResponse.json(
-        { success: false, error: `Failed to fetch URL (status ${response.status})` },
+        { success: false, error: `The website returned an error (status ${response!.status}). Try pasting the full product page URL.` },
         { status: 200 }
       );
     }
 
     // Read up to 200KB to capture product data that may be further down the page
-    const reader = response.body?.getReader();
+    const reader = response!.body?.getReader();
     if (!reader) {
-      return NextResponse.json({ success: false, error: "No response body" }, { status: 200 });
+      // Fallback: try to get text directly
+      try {
+        const text = await response!.text();
+        const html = text.slice(0, 200 * 1024);
+        return processHtml(html, response!.url);
+      } catch {
+        return NextResponse.json({ success: false, error: "No response body" }, { status: 200 });
+      }
     }
 
     let html = "";
@@ -47,59 +79,67 @@ export async function POST(request: NextRequest) {
     const maxBytes = 200 * 1024;
     let bytesRead = 0;
 
-    while (bytesRead < maxBytes) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      html += decoder.decode(value, { stream: true });
-      bytesRead += value.length;
-    }
-    reader.cancel();
-
-    const finalUrl = response.url;
-
-    // Detect platform from resolved URL
-    const platform = detectPlatform(finalUrl);
-
-    // Extract all metadata
-    const title = extractTitle(html);
-    const description = extractDescription(html);
-    const image = extractImage(html, finalUrl);
-    const price = extractPrice(html, platform);
-    const originalPrice = extractOriginalPrice(html, platform);
-    const category = extractCategory(html, platform);
-    const tags = extractTags(html, title, description);
-    const rating = extractRating(html, platform);
-    const reviewCount = extractReviewCount(html, platform);
-    const siteName = extractMeta(html, "og:site_name");
-
-    if (!title && !description && !image) {
-      return NextResponse.json(
-        { success: false, error: "Could not extract metadata from this page. The site may require JavaScript rendering." },
-        { status: 200 }
-      );
+    try {
+      while (bytesRead < maxBytes) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        html += decoder.decode(value, { stream: true });
+        bytesRead += value.length;
+      }
+      reader.cancel().catch(() => {});
+    } catch {
+      // Partial read is fine, continue with what we have
     }
 
-    return NextResponse.json({
-      success: true,
-      title,
-      description,
-      image,
-      price,
-      originalPrice,
-      category,
-      tags,
-      rating,
-      reviewCount,
-      platform,
-      siteName,
-      resolvedUrl: finalUrl,
-    });
+    if (!html) {
+      return NextResponse.json({ success: false, error: "Empty response from website." }, { status: 200 });
+    }
+
+    return processHtml(html, response!.url);
   } catch (error: any) {
-    const message = error?.name === "TimeoutError"
+    const message = error?.name === "AbortError"
       ? "Request timed out. The site may be blocking automated requests."
-      : "Failed to fetch metadata. " + (error?.message || "");
+      : "Failed to fetch metadata: " + (error?.message || "Unknown error");
     return NextResponse.json({ success: false, error: message }, { status: 200 });
   }
+}
+
+function processHtml(html: string, finalUrl: string) {
+  const platform = detectPlatform(finalUrl);
+
+  const title = extractTitle(html);
+  const description = extractDescription(html);
+  const image = extractImage(html, finalUrl);
+  const price = extractPrice(html, platform);
+  const originalPrice = extractOriginalPrice(html, platform);
+  const category = extractCategory(html, platform);
+  const tags = extractTags(html, title, description);
+  const rating = extractRating(html, platform);
+  const reviewCount = extractReviewCount(html, platform);
+  const siteName = extractMeta(html, "og:site_name");
+
+  if (!title && !description && !image) {
+    return NextResponse.json(
+      { success: false, error: "Could not extract metadata from this page. The site may require JavaScript rendering." },
+      { status: 200 }
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    title,
+    description,
+    image,
+    price,
+    originalPrice,
+    category,
+    tags,
+    rating,
+    reviewCount,
+    platform,
+    siteName,
+    resolvedUrl: finalUrl,
+  });
 }
 
 // --- Platform Detection ---
