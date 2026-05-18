@@ -52,11 +52,12 @@ async function fetchViaMetadataApi(url: string): Promise<any | null> {
       const data = await res.json();
       if (data.title || data.description || data.images?.length) {
         const platform = detectPlatform(url);
+        const filteredImage = filterProductImage(data.images, platform);
         return {
           success: true,
           title: data.title || undefined,
           description: data.description || undefined,
-          image: data.images?.[0] || undefined,
+          image: filteredImage || undefined,
           price: undefined, // These APIs don't extract price
           originalPrice: undefined,
           category: inferCategoryFromText(data.title || "", data.description || ""),
@@ -161,6 +162,56 @@ async function fetchViaProxy(url: string): Promise<string | null> {
 }
 
 // --- Helpers for metadata API results ---
+
+function filterProductImage(images: string[] | undefined, platform: string): string | undefined {
+  if (!images || images.length === 0) return undefined;
+
+  // Patterns that indicate a site logo, not a product image
+  const logoPatterns = [
+    /prime[-_]?logo/i,
+    /amazon[-_]?logo/i,
+    /flipkart[-_]?logo/i,
+    /site[-_]?logo/i,
+    /brand[-_]?logo/i,
+    /favicon/i,
+    /sprite/i,
+    /icon[-_]?\d/i,
+    /nav[-_]?logo/i,
+    /header[-_]?logo/i,
+    /og[-_]?default/i,
+    /placeholder/i,
+    /\/logo\./i,
+    /\/logos\//i,
+    /prime.*video/i,
+    /ssl-images-amazon\.com\/images\/G\//i, // Amazon global assets (logos)
+  ];
+
+  // Try to find a product image (not a logo)
+  for (const img of images) {
+    if (!img) continue;
+    const isLogo = logoPatterns.some((p) => p.test(img));
+    if (!isLogo) {
+      // Prefer images that look like product images
+      if (img.includes("/images/I/") || // Amazon product images
+          img.includes("rukminim") || // Flipkart CDN
+          img.includes("media") ||
+          img.includes("product") ||
+          img.length > 60) { // Product image URLs tend to be longer
+        return img;
+      }
+    }
+  }
+
+  // If no clear product image found, return first non-logo image
+  for (const img of images) {
+    if (!img) continue;
+    const isLogo = logoPatterns.some((p) => p.test(img));
+    if (!isLogo) return img;
+  }
+
+  // Last resort: return first image
+  return images[0];
+}
 
 function inferCategoryFromText(title: string, description: string): string | undefined {
   const text = (title + " " + description).toLowerCase();

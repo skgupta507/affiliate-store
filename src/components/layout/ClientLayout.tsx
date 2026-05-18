@@ -4,6 +4,7 @@ import { useStore } from "@/store/useStore";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { ToastContainer } from "./ToastContainer";
+import { FirestoreSync } from "@/components/FirestoreSync";
 import { useEffect } from "react";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +17,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={theme === "light" ? "light" : ""}>
+      <FirestoreSync />
       <Navbar />
       <main className="pt-24 min-h-screen">{children}</main>
       <Footer />

@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Link2, Loader2, Sparkles, AlertCircle, Image as ImageIcon } from "lucide-react";
+import { Link2, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { fetchMetadata } from "@/lib/metadata";
 import { isValidUrl, getAffiliatePlatform, generateId } from "@/lib/utils";
@@ -25,6 +23,7 @@ export function AdminAddProduct() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
+  const [platform, setPlatform] = useState("");
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState("");
   const [price, setPrice] = useState("");
@@ -38,6 +37,12 @@ export function AdminAddProduct() {
     if (!url || !isValidUrl(url)) {
       error("Invalid URL", "Please enter a valid product URL.");
       return;
+    }
+
+    // Auto-detect platform from URL
+    const detectedPlatform = getAffiliatePlatform(url);
+    if (detectedPlatform !== "Other") {
+      setPlatform(detectedPlatform);
     }
 
     setFetching(true);
@@ -61,6 +66,7 @@ export function AdminAddProduct() {
       if (result.tags && result.tags.length > 0) setTags(result.tags.join(", "));
       if (result.rating) setRating(result.rating);
       if (result.reviewCount) setReviewCount(result.reviewCount);
+      if (result.platform && result.platform !== "Other") setPlatform(result.platform);
       success("Metadata fetched!", "Product details extracted successfully.");
     } else {
       setFetchError(result.error || "Could not fetch metadata.");
@@ -87,7 +93,7 @@ export function AdminAddProduct() {
       description: description.trim(),
       image: image.trim(),
       affiliateUrl: url.trim(),
-      platform: getAffiliatePlatform(url),
+      platform: platform.trim() || getAffiliatePlatform(url),
       category: category || "Electronics",
       tags: tags
         .split(",")
@@ -97,7 +103,7 @@ export function AdminAddProduct() {
       originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
       currency: "INR",
       rating: rating ? parseFloat(rating) : undefined,
-      reviewCount: reviewCount ? parseInt(reviewCount) : Math.floor(Math.random() * 500) + 10,
+      reviewCount: reviewCount ? parseInt(reviewCount) : undefined,
       isFeatured,
       isTrending,
       clicks: 0,
@@ -113,11 +119,13 @@ export function AdminAddProduct() {
     setTitle("");
     setDescription("");
     setImage("");
+    setPlatform("");
     setCategory("");
     setTags("");
     setPrice("");
     setOriginalPrice("");
     setRating("");
+    setReviewCount("");
     setIsFeatured(false);
     setIsTrending(false);
     setFetchError("");
@@ -224,11 +232,12 @@ export function AdminAddProduct() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="flex h-10 w-full rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                  className="flex h-10 w-full rounded-xl border border-white/20 bg-[#1a1a2e] px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all appearance-none"
+                  style={{ colorScheme: "dark" }}
                 >
-                  <option value="">Select category</option>
+                  <option value="" className="bg-[#1a1a2e] text-white">Select category</option>
                   {categories.map((cat) => (
-                    <option key={cat.id} value={cat.name}>
+                    <option key={cat.id} value={cat.name} className="bg-[#1a1a2e] text-white">
                       {cat.name}
                     </option>
                   ))}
@@ -290,9 +299,9 @@ export function AdminAddProduct() {
                   Platform
                 </label>
                 <Input
-                  value={getAffiliatePlatform(url)}
-                  disabled
-                  placeholder="Auto-detected from URL"
+                  value={platform}
+                  onChange={(e) => setPlatform(e.target.value)}
+                  placeholder="Amazon, Flipkart, etc."
                 />
               </div>
             </div>
