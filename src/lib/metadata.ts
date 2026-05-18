@@ -26,6 +26,7 @@ export async function fetchMetadata(url: string): Promise<MetadataResult> {
         category: data.category,
         tags: data.tags,
         rating: data.rating,
+        reviewCount: data.reviewCount,
         platform: data.platform,
         siteName: data.siteName,
         success: true,

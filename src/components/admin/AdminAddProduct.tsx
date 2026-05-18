@@ -30,6 +30,7 @@ export function AdminAddProduct() {
   const [price, setPrice] = useState("");
   const [originalPrice, setOriginalPrice] = useState("");
   const [rating, setRating] = useState("");
+  const [reviewCount, setReviewCount] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
 
@@ -59,6 +60,7 @@ export function AdminAddProduct() {
       if (result.category) setCategory(result.category);
       if (result.tags && result.tags.length > 0) setTags(result.tags.join(", "));
       if (result.rating) setRating(result.rating);
+      if (result.reviewCount) setReviewCount(result.reviewCount);
       success("Metadata fetched!", "Product details extracted successfully.");
     } else {
       setFetchError(result.error || "Could not fetch metadata.");
@@ -95,7 +97,7 @@ export function AdminAddProduct() {
       originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
       currency: "INR",
       rating: rating ? parseFloat(rating) : undefined,
-      reviewCount: Math.floor(Math.random() * 500) + 10,
+      reviewCount: reviewCount ? parseInt(reviewCount) : Math.floor(Math.random() * 500) + 10,
       isFeatured,
       isTrending,
       clicks: 0,

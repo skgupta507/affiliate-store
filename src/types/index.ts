@@ -52,6 +52,7 @@ export interface MetadataResult {
   category?: string;
   tags?: string[];
   rating?: string;
+  reviewCount?: string;
   platform?: string;
   siteName?: string;
   success: boolean;

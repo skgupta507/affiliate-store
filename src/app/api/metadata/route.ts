@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
     const category = extractCategory(html, platform);
     const tags = extractTags(html, title, description);
     const rating = extractRating(html, platform);
+    const reviewCount = extractReviewCount(html, platform);
     const siteName = extractMeta(html, "og:site_name");
 
     if (!title && !description && !image) {
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
       category,
       tags,
       rating,
+      reviewCount,
       platform,
       siteName,
       resolvedUrl: finalUrl,
@@ -501,6 +503,43 @@ function extractRating(html: string, platform: string): string | undefined {
   if (itempropRating?.[1]) {
     const num = parseFloat(itempropRating[1]);
     if (num > 0 && num <= 5) return num.toString();
+  }
+
+  return undefined;
+}
+
+// --- Review Count ---
+
+function extractReviewCount(html: string, platform: string): string | undefined {
+  // JSON-LD reviewCount
+  const jsonLdCount = html.match(/"reviewCount"\s*:\s*"?(\d+)"?/i);
+  if (jsonLdCount?.[1]) return jsonLdCount[1];
+
+  const jsonLdRatingCount = html.match(/"ratingCount"\s*:\s*"?(\d+)"?/i);
+  if (jsonLdRatingCount?.[1]) return jsonLdRatingCount[1];
+
+  if (platform === "Amazon") {
+    const amazonCount = html.match(/id=["']acrCustomerReviewText["'][^>]*>([\d,]+)\s*(rating|review)/i);
+    if (amazonCount?.[1]) return amazonCount[1].replace(/,/g, "");
+
+    const amazonCount2 = html.match(/([\d,]+)\s*(customer review|rating|global rating)/i);
+    if (amazonCount2?.[1]) return amazonCount2[1].replace(/,/g, "");
+  }
+
+  if (platform === "Flipkart") {
+    const flipkartCount = html.match(/([\d,]+)\s*Ratings?\s*&?\s*([\d,]+)?\s*Reviews?/i);
+    if (flipkartCount?.[1]) return flipkartCount[1].replace(/,/g, "");
+  }
+
+  // itemprop reviewCount
+  const itempropCount = html.match(/itemprop=["']reviewCount["'][^>]*content=["']([^"']+)["']/i);
+  if (itempropCount?.[1]) return itempropCount[1];
+
+  // Generic
+  const genericCount = html.match(/([\d,]+)\s*(reviews?|ratings?)/i);
+  if (genericCount?.[1]) {
+    const num = parseInt(genericCount[1].replace(/,/g, ""));
+    if (num > 0 && num < 1000000) return num.toString();
   }
 
   return undefined;

@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: "AffiliateHub - Premium Product Deals",
   description:
     "Discover the best affiliate deals from Amazon, Flipkart, and more. Curated products with premium shopping experience.",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/logo.svg",
+  },
   openGraph: {
     title: "AffiliateHub - Premium Product Deals",
     description:
