@@ -38,6 +38,11 @@ export interface MetadataResult {
   description?: string;
   image?: string;
   price?: string;
+  originalPrice?: string;
+  category?: string;
+  tags?: string[];
+  rating?: string;
+  platform?: string;
   siteName?: string;
   success: boolean;
   error?: string;

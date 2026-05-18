@@ -52,6 +52,13 @@ export function AdminAddProduct() {
         const numPrice = parseFloat(result.price.replace(/[^0-9.]/g, ""));
         if (!isNaN(numPrice)) setPrice(numPrice.toString());
       }
+      if (result.originalPrice) {
+        const numPrice = parseFloat(result.originalPrice.replace(/[^0-9.]/g, ""));
+        if (!isNaN(numPrice)) setOriginalPrice(numPrice.toString());
+      }
+      if (result.category) setCategory(result.category);
+      if (result.tags && result.tags.length > 0) setTags(result.tags.join(", "));
+      if (result.rating) setRating(result.rating);
       success("Metadata fetched!", "Product details extracted successfully.");
     } else {
       setFetchError(result.error || "Could not fetch metadata.");
@@ -281,7 +288,7 @@ export function AdminAddProduct() {
                   Platform
                 </label>
                 <Input
-                  value={getAffiliatePlatform(url) || ""}
+                  value={getAffiliatePlatform(url)}
                   disabled
                   placeholder="Auto-detected from URL"
                 />

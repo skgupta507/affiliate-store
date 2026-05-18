@@ -1,0 +1,632 @@
+import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "edge";
+
+export async function POST(request: NextRequest) {
+  try {
+    const { url } = await request.json();
+
+    if (!url) {
+      return NextResponse.json({ success: false, error: "URL is required" }, { status: 400 });
+    }
+
+    // Follow redirects (handles shortened URLs like amzn.in)
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
+        "Accept-Encoding": "identity",
+        "Cache-Control": "no-cache",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { success: false, error: `Failed to fetch URL (status ${response.status})` },
+        { status: 200 }
+      );
+    }
+
+    // Read up to 200KB to capture product data that may be further down the page
+    const reader = response.body?.getReader();
+    if (!reader) {
+      return NextResponse.json({ success: false, error: "No response body" }, { status: 200 });
+    }
+
+    let html = "";
+    const decoder = new TextDecoder();
+    const maxBytes = 200 * 1024;
+    let bytesRead = 0;
+
+    while (bytesRead < maxBytes) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      html += decoder.decode(value, { stream: true });
+      bytesRead += value.length;
+    }
+    reader.cancel();
+
+    const finalUrl = response.url;
+
+    // Detect platform from resolved URL
+    const platform = detectPlatform(finalUrl);
+
+    // Extract all metadata
+    const title = extractTitle(html);
+    const description = extractDescription(html);
+    const image = extractImage(html, finalUrl);
+    const price = extractPrice(html, platform);
+    const originalPrice = extractOriginalPrice(html, platform);
+    const category = extractCategory(html, platform);
+    const tags = extractTags(html, title, description);
+    const rating = extractRating(html, platform);
+    const siteName = extractMeta(html, "og:site_name");
+
+    if (!title && !description && !image) {
+      return NextResponse.json(
+        { success: false, error: "Could not extract metadata from this page. The site may require JavaScript rendering." },
+        { status: 200 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      title,
+      description,
+      image,
+      price,
+      originalPrice,
+      category,
+      tags,
+      rating,
+      platform,
+      siteName,
+      resolvedUrl: finalUrl,
+    });
+  } catch (error: any) {
+    const message = error?.name === "TimeoutError"
+      ? "Request timed out. The site may be blocking automated requests."
+      : "Failed to fetch metadata. " + (error?.message || "");
+    return NextResponse.json({ success: false, error: message }, { status: 200 });
+  }
+}
+
+// --- Platform Detection ---
+
+function detectPlatform(url: string): string {
+  const hostname = url.toLowerCase();
+  if (hostname.includes("amazon")) return "Amazon";
+  if (hostname.includes("flipkart")) return "Flipkart";
+  if (hostname.includes("myntra")) return "Myntra";
+  if (hostname.includes("ajio")) return "Ajio";
+  if (hostname.includes("meesho")) return "Meesho";
+  if (hostname.includes("snapdeal")) return "Snapdeal";
+  if (hostname.includes("ebay")) return "eBay";
+  if (hostname.includes("aliexpress")) return "AliExpress";
+  if (hostname.includes("nykaa")) return "Nykaa";
+  if (hostname.includes("croma")) return "Croma";
+  if (hostname.includes("tatacliq")) return "TataCliq";
+  if (hostname.includes("jiomart")) return "JioMart";
+  return "Other";
+}
+
+// --- Meta Extraction ---
+
+function extractMeta(html: string, property: string): string | undefined {
+  // Handle multi-line meta tags and various attribute orders
+  const patterns = [
+    new RegExp(`<meta[^>]*property=["']${property}["'][^>]*content=["']([^"']+)["']`, "i"),
+    new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*property=["']${property}["']`, "i"),
+    new RegExp(`<meta[^>]*name=["']${property}["'][^>]*content=["']([^"']+)["']`, "i"),
+    new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*name=["']${property}["']`, "i"),
+    // itemprop variant
+    new RegExp(`<meta[^>]*itemprop=["']${property}["'][^>]*content=["']([^"']+)["']`, "i"),
+  ];
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match?.[1] && match[1].trim()) return decodeHtmlEntities(match[1].trim());
+  }
+  return undefined;
+}
+
+// --- Title ---
+
+function extractTitle(html: string): string | undefined {
+  // Priority: og:title > twitter:title > product name from JSON-LD > <title>
+  const ogTitle = extractMeta(html, "og:title");
+  if (ogTitle) return cleanTitle(ogTitle);
+
+  const twitterTitle = extractMeta(html, "twitter:title");
+  if (twitterTitle) return cleanTitle(twitterTitle);
+
+  // JSON-LD product name
+  const jsonLdName = extractFromJsonLd(html, "name");
+  if (jsonLdName) return cleanTitle(jsonLdName);
+
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (titleMatch?.[1]?.trim()) return cleanTitle(decodeHtmlEntities(titleMatch[1].trim()));
+
+  return undefined;
+}
+
+function cleanTitle(title: string): string {
+  // Remove common suffixes like " - Amazon.in", " | Flipkart", " - Buy Online"
+  return title
+    .replace(/\s*[-|:]\s*(Amazon\.in|Amazon\.com|Flipkart\.com|Flipkart|Myntra|Buy Online.*|Online.*India).*$/i, "")
+    .replace(/\s*\(.*?\)\s*$/, "") // Remove trailing parenthetical
+    .trim();
+}
+
+// --- Description ---
+
+function extractDescription(html: string): string | undefined {
+  const desc = extractMeta(html, "og:description") ||
+    extractMeta(html, "description") ||
+    extractMeta(html, "twitter:description") ||
+    extractFromJsonLd(html, "description");
+
+  if (desc) {
+    // Trim to reasonable length
+    return desc.length > 500 ? desc.slice(0, 500) + "..." : desc;
+  }
+  return undefined;
+}
+
+// --- Image ---
+
+function extractImage(html: string, pageUrl: string): string | undefined {
+  // 1. OG image (most reliable)
+  const ogImage = extractMeta(html, "og:image");
+  if (ogImage && isValidImageUrl(ogImage)) return resolveUrl(ogImage, pageUrl);
+
+  // 2. Twitter image
+  const twitterImage = extractMeta(html, "twitter:image") || extractMeta(html, "twitter:image:src");
+  if (twitterImage && isValidImageUrl(twitterImage)) return resolveUrl(twitterImage, pageUrl);
+
+  // 3. JSON-LD image
+  const jsonLdImage = extractImageFromJsonLd(html);
+  if (jsonLdImage) return resolveUrl(jsonLdImage, pageUrl);
+
+  // 4. Amazon specific: landingImage or imgTagWrapperId
+  const amazonPatterns = [
+    /id=["']landingImage["'][^>]*src=["']([^"']+)["']/i,
+    /id=["']imgBlkFront["'][^>]*src=["']([^"']+)["']/i,
+    /data-old-hires=["']([^"']+)["']/i,
+    /data-a-dynamic-image=["']\{["']([^"']+)["']/i,
+  ];
+  for (const pattern of amazonPatterns) {
+    const match = html.match(pattern);
+    if (match?.[1] && isValidImageUrl(match[1])) return match[1];
+  }
+
+  // 5. Flipkart specific
+  const flipkartImg = html.match(/class=["'][^"']*_396cs4[^"']*["'][^>]*src=["']([^"']+)["']/i);
+  if (flipkartImg?.[1] && isValidImageUrl(flipkartImg[1])) return flipkartImg[1];
+
+  // 6. First large product image (generic fallback)
+  const imgMatches = html.matchAll(/<img[^>]*src=["']([^"']+)["'][^>]*/gi);
+  for (const m of imgMatches) {
+    const src = m[1];
+    if (isValidImageUrl(src) && isLikelyProductImage(src, m[0])) {
+      return resolveUrl(src, pageUrl);
+    }
+  }
+
+  return undefined;
+}
+
+function isValidImageUrl(url: string): boolean {
+  if (!url || url.length < 10) return false;
+  if (url.startsWith("data:")) return false;
+  // Must look like an image URL or be from a CDN
+  const lower = url.toLowerCase();
+  return (
+    lower.includes(".jpg") || lower.includes(".jpeg") || lower.includes(".png") ||
+    lower.includes(".webp") || lower.includes("image") || lower.includes("/img") ||
+    lower.includes("media") || lower.includes("cdn") || lower.includes("photo")
+  );
+}
+
+function isLikelyProductImage(src: string, imgTag: string): boolean {
+  // Skip tiny icons, logos, sprites
+  const skipPatterns = /icon|logo|sprite|pixel|tracking|badge|star|rating|avatar|banner|ad[_-]/i;
+  if (skipPatterns.test(src) || skipPatterns.test(imgTag)) return false;
+
+  // Check for size hints suggesting a product image
+  const widthMatch = imgTag.match(/width=["']?(\d+)/i);
+  if (widthMatch && parseInt(widthMatch[1]) < 100) return false;
+
+  return true;
+}
+
+function resolveUrl(url: string, pageUrl: string): string {
+  if (url.startsWith("http")) return url;
+  if (url.startsWith("//")) return "https:" + url;
+  try {
+    return new URL(url, pageUrl).href;
+  } catch {
+    return url;
+  }
+}
+
+// --- Price ---
+
+function extractPrice(html: string, platform: string): string | undefined {
+  // 1. JSON-LD price (most structured/reliable)
+  const jsonLdPrice = extractPriceFromJsonLd(html);
+  if (jsonLdPrice) return jsonLdPrice;
+
+  // 2. Platform-specific patterns
+  if (platform === "Amazon") {
+    const amazonPatterns = [
+      // Whole price span
+      /class=["'][^"']*a-price-whole["'][^>]*>([\d,]+)/i,
+      /id=["']priceblock_dealprice["'][^>]*>[₹$]?\s*([\d,]+\.?\d*)/i,
+      /id=["']priceblock_ourprice["'][^>]*>[₹$]?\s*([\d,]+\.?\d*)/i,
+      /class=["'][^"']*priceToPay[^"']*["'][^>]*>[^<]*<span[^>]*>([\d,]+)/i,
+      /corePriceDisplay_desktop_feature_div[^]*?class=["']a-price-whole["'][^>]*>([\d,]+)/i,
+      /"priceAmount":([\d.]+)/i,
+    ];
+    for (const pattern of amazonPatterns) {
+      const match = html.match(pattern);
+      if (match?.[1]) {
+        const cleaned = match[1].replace(/[,\s]/g, "");
+        const num = parseFloat(cleaned);
+        if (!isNaN(num) && num > 0) return num.toString();
+      }
+    }
+  }
+
+  if (platform === "Flipkart") {
+    const flipkartPatterns = [
+      /class=["'][^"']*Nx9bqj[^"']*["'][^>]*>[₹]?\s*([\d,]+)/i,
+      /class=["'][^"']*_30jeq3[^"']*["'][^>]*>[₹]?\s*([\d,]+)/i,
+      /class=["'][^"']*_16Jk6d["'][^>]*>[₹]?\s*([\d,]+)/i,
+    ];
+    for (const pattern of flipkartPatterns) {
+      const match = html.match(pattern);
+      if (match?.[1]) {
+        const cleaned = match[1].replace(/[,\s]/g, "");
+        const num = parseFloat(cleaned);
+        if (!isNaN(num) && num > 0) return num.toString();
+      }
+    }
+  }
+
+  // 3. itemprop price
+  const itempropPrice = html.match(/itemprop=["']price["'][^>]*content=["']([^"']+)["']/i);
+  if (itempropPrice?.[1]) {
+    const num = parseFloat(itempropPrice[1].replace(/[,\s]/g, ""));
+    if (!isNaN(num) && num > 0) return num.toString();
+  }
+
+  // 4. Generic price patterns
+  const genericPatterns = [
+    /["']price["']\s*:\s*["']?([\d,.]+)["']?/i,
+    /class=["'][^"']*price[^"']*["'][^>]*>[₹$€£]?\s*([\d,]+\.?\d*)/i,
+    /[₹]\s*([\d,]+\.?\d*)/,
+  ];
+  for (const pattern of genericPatterns) {
+    const match = html.match(pattern);
+    if (match?.[1]) {
+      const cleaned = match[1].replace(/[,\s]/g, "");
+      const num = parseFloat(cleaned);
+      if (!isNaN(num) && num > 1) return num.toString();
+    }
+  }
+
+  return undefined;
+}
+
+function extractOriginalPrice(html: string, platform: string): string | undefined {
+  if (platform === "Amazon") {
+    const patterns = [
+      /class=["'][^"']*a-text-price[^"']*["'][^>]*>[^<]*[₹$]\s*([\d,]+\.?\d*)/i,
+      /class=["'][^"']*priceBlockStrikePriceString[^"']*["'][^>]*>[₹$]\s*([\d,]+\.?\d*)/i,
+      /class=["'][^"']*basisPrice[^"']*["'][^]*?<span[^>]*>[₹$]?\s*([\d,]+)/i,
+    ];
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match?.[1]) {
+        const cleaned = match[1].replace(/[,\s]/g, "");
+        const num = parseFloat(cleaned);
+        if (!isNaN(num) && num > 0) return num.toString();
+      }
+    }
+  }
+
+  if (platform === "Flipkart") {
+    const patterns = [
+      /class=["'][^"']*yRaY8j[^"']*["'][^>]*>[₹]?\s*([\d,]+)/i,
+      /class=["'][^"']*_3I9_wc[^"']*["'][^>]*>[₹]?\s*([\d,]+)/i,
+    ];
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match?.[1]) {
+        const cleaned = match[1].replace(/[,\s]/g, "");
+        const num = parseFloat(cleaned);
+        if (!isNaN(num) && num > 0) return num.toString();
+      }
+    }
+  }
+
+  return undefined;
+}
+
+// --- Category ---
+
+function extractCategory(html: string, platform: string): string | undefined {
+  // 1. Breadcrumbs (most reliable for category)
+  if (platform === "Amazon") {
+    const breadcrumb = html.match(/id=["']wayfinding-breadcrumbs[^"']*["'][^>]*>[^]*?<a[^>]*>([^<]+)/i);
+    if (breadcrumb?.[1]) return decodeHtmlEntities(breadcrumb[1].trim());
+
+    const navCat = html.match(/class=["'][^"']*nav-a-content["'][^>]*>([^<]+)/i);
+    if (navCat?.[1]) return decodeHtmlEntities(navCat[1].trim());
+  }
+
+  if (platform === "Flipkart") {
+    // Flipkart breadcrumb
+    const breadcrumb = html.match(/class=["'][^"']*_1MR4o5[^"']*["'][^>]*>[^]*?<a[^>]*>([^<]+)/i);
+    if (breadcrumb?.[1]) return decodeHtmlEntities(breadcrumb[1].trim());
+  }
+
+  // 2. JSON-LD category
+  const categoryMatch = html.match(/"category"\s*:\s*"([^"]+)"/i);
+  if (categoryMatch?.[1]) return decodeHtmlEntities(categoryMatch[1]);
+
+  // 3. og:type or product:category
+  const productCat = extractMeta(html, "product:category");
+  if (productCat) return productCat;
+
+  // 4. Infer from keywords/title
+  const keywords = extractMeta(html, "keywords");
+  if (keywords) {
+    return inferCategoryFromKeywords(keywords);
+  }
+
+  return undefined;
+}
+
+function inferCategoryFromKeywords(keywords: string): string | undefined {
+  const lower = keywords.toLowerCase();
+  const categoryMap: [string, string][] = [
+    ["electronics", "Electronics"],
+    ["phone", "Electronics"],
+    ["laptop", "Electronics"],
+    ["computer", "Electronics"],
+    ["headphone", "Electronics"],
+    ["camera", "Electronics"],
+    ["tablet", "Electronics"],
+    ["watch", "Electronics"],
+    ["fashion", "Fashion"],
+    ["clothing", "Fashion"],
+    ["shirt", "Fashion"],
+    ["dress", "Fashion"],
+    ["shoes", "Fashion"],
+    ["sneaker", "Fashion"],
+    ["jacket", "Fashion"],
+    ["kitchen", "Home & Kitchen"],
+    ["home", "Home & Kitchen"],
+    ["furniture", "Home & Kitchen"],
+    ["appliance", "Home & Kitchen"],
+    ["book", "Books"],
+    ["novel", "Books"],
+    ["sport", "Sports"],
+    ["fitness", "Sports"],
+    ["gym", "Sports"],
+    ["beauty", "Beauty"],
+    ["skincare", "Beauty"],
+    ["makeup", "Beauty"],
+    ["cosmetic", "Beauty"],
+    ["toy", "Toys"],
+    ["game", "Toys"],
+    ["car", "Automotive"],
+    ["bike", "Automotive"],
+    ["automotive", "Automotive"],
+  ];
+
+  for (const [keyword, category] of categoryMap) {
+    if (lower.includes(keyword)) return category;
+  }
+  return undefined;
+}
+
+// --- Tags ---
+
+function extractTags(html: string, title?: string, description?: string): string[] {
+  const tags: Set<string> = new Set();
+
+  // 1. Meta keywords
+  const keywords = extractMeta(html, "keywords");
+  if (keywords) {
+    keywords.split(",").forEach((k) => {
+      const trimmed = k.trim().toLowerCase();
+      if (trimmed && trimmed.length > 2 && trimmed.length < 30) {
+        tags.add(trimmed);
+      }
+    });
+  }
+
+  // 2. Extract meaningful words from title
+  if (title) {
+    const words = title.toLowerCase().split(/[\s,\-|]+/);
+    const stopWords = new Set(["the", "a", "an", "and", "or", "for", "with", "in", "on", "at", "to", "of", "by", "is", "it", "its", "from", "buy", "online", "india", "best", "new", "free", "price"]);
+    words.forEach((w) => {
+      const clean = w.replace(/[^a-z0-9]/g, "");
+      if (clean.length > 2 && clean.length < 20 && !stopWords.has(clean)) {
+        tags.add(clean);
+      }
+    });
+  }
+
+  // Limit to 8 most relevant tags
+  return Array.from(tags).slice(0, 8);
+}
+
+// --- Rating ---
+
+function extractRating(html: string, platform: string): string | undefined {
+  // JSON-LD rating
+  const ratingMatch = html.match(/"ratingValue"\s*:\s*"?([\d.]+)"?/i);
+  if (ratingMatch?.[1]) {
+    const num = parseFloat(ratingMatch[1]);
+    if (num > 0 && num <= 5) return num.toString();
+  }
+
+  if (platform === "Amazon") {
+    const amazonRating = html.match(/class=["'][^"']*a-icon-alt["'][^>]*>([\d.]+)\s*out\s*of/i);
+    if (amazonRating?.[1]) return amazonRating[1];
+  }
+
+  if (platform === "Flipkart") {
+    const flipkartRating = html.match(/class=["'][^"']*_3LWZlK["'][^>]*>([\d.]+)/i);
+    if (flipkartRating?.[1]) {
+      const num = parseFloat(flipkartRating[1]);
+      if (num > 0 && num <= 5) return num.toString();
+    }
+  }
+
+  // itemprop ratingValue
+  const itempropRating = html.match(/itemprop=["']ratingValue["'][^>]*content=["']([^"']+)["']/i);
+  if (itempropRating?.[1]) {
+    const num = parseFloat(itempropRating[1]);
+    if (num > 0 && num <= 5) return num.toString();
+  }
+
+  return undefined;
+}
+
+// --- JSON-LD Helpers ---
+
+function extractFromJsonLd(html: string, field: string): string | undefined {
+  const scripts = html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+  for (const scriptMatch of scripts) {
+    try {
+      const json = JSON.parse(scriptMatch[1]);
+      const value = findInJsonLd(json, field);
+      if (value && typeof value === "string") return decodeHtmlEntities(value);
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
+}
+
+function extractImageFromJsonLd(html: string): string | undefined {
+  const scripts = html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+  for (const scriptMatch of scripts) {
+    try {
+      const json = JSON.parse(scriptMatch[1]);
+      const img = findImageInJsonLd(json);
+      if (img) return img;
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
+}
+
+function extractPriceFromJsonLd(html: string): string | undefined {
+  const scripts = html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+  for (const scriptMatch of scripts) {
+    try {
+      const json = JSON.parse(scriptMatch[1]);
+      const price = findPriceInJsonLd(json);
+      if (price) return price;
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
+}
+
+function findInJsonLd(obj: any, field: string): string | undefined {
+  if (!obj || typeof obj !== "object") return undefined;
+  if (obj[field] && typeof obj[field] === "string") return obj[field];
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const result = findInJsonLd(item, field);
+      if (result) return result;
+    }
+  } else {
+    for (const key of Object.keys(obj)) {
+      if (key === field && typeof obj[key] === "string") return obj[key];
+      const result = findInJsonLd(obj[key], field);
+      if (result) return result;
+    }
+  }
+  return undefined;
+}
+
+function findImageInJsonLd(obj: any): string | undefined {
+  if (!obj || typeof obj !== "object") return undefined;
+  if (obj.image) {
+    if (typeof obj.image === "string") return obj.image;
+    if (Array.isArray(obj.image) && obj.image[0]) {
+      return typeof obj.image[0] === "string" ? obj.image[0] : obj.image[0]?.url;
+    }
+    if (obj.image.url) return obj.image.url;
+  }
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const result = findImageInJsonLd(item);
+      if (result) return result;
+    }
+  }
+  return undefined;
+}
+
+function findPriceInJsonLd(obj: any): string | undefined {
+  if (!obj || typeof obj !== "object") return undefined;
+  // Look for offers.price or offers.lowPrice
+  if (obj.offers) {
+    const offers = Array.isArray(obj.offers) ? obj.offers[0] : obj.offers;
+    if (offers?.price) {
+      const num = parseFloat(String(offers.price).replace(/[,\s]/g, ""));
+      if (!isNaN(num) && num > 0) return num.toString();
+    }
+    if (offers?.lowPrice) {
+      const num = parseFloat(String(offers.lowPrice).replace(/[,\s]/g, ""));
+      if (!isNaN(num) && num > 0) return num.toString();
+    }
+  }
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const result = findPriceInJsonLd(item);
+      if (result) return result;
+    }
+  } else {
+    for (const key of Object.keys(obj)) {
+      if (typeof obj[key] === "object") {
+        const result = findPriceInJsonLd(obj[key]);
+        if (result) return result;
+      }
+    }
+  }
+  return undefined;
+}
+
+// --- Utilities ---
+
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, "/")
+    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num)))
+    .replace(/&#x([a-fA-F0-9]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+}
