@@ -3,12 +3,11 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, ExternalLink, Star, TrendingUp, Sparkles } from "lucide-react";
+import { Heart, ExternalLink, Star, TrendingUp, Sparkles, ShoppingCart, Check } from "lucide-react";
 import { Product } from "@/types";
 import { useStore } from "@/store/useStore";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { formatPrice, truncateText, getRelativeTime } from "@/lib/utils";
+import { useState } from "react";
 
 interface ProductCardProps {
   product: Product;
@@ -16,55 +15,76 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
-  const { toggleWishlist, wishlist, incrementClicks } = useStore();
+  const { toggleWishlist, wishlist, incrementClicks, addToCart, cart } = useStore();
   const isWishlisted = wishlist.includes(product.id);
+  const isInCart = cart.some((item) => item.productId === product.id);
+  const [justAdded, setJustAdded] = useState(false);
+
+  const discount = product.price && product.originalPrice && product.originalPrice > product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0;
 
   const handleBuyNow = () => {
-    incrementClicks(product.id);
-    window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
+    if (product.isAffiliate) {
+      incrementClicks(product.id);
+      window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
+    } else {
+      addToCart(product.id);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 2000);
+    }
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product.id);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 2000);
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
-      whileHover={{ y: -4 }}
-      className="group relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300"
+      transition={{ duration: 0.3, delay: index * 0.04 }}
+      className="group card-glow-hover rounded-xl border border-border bg-card overflow-hidden"
     >
       {/* Badges */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
         {product.isFeatured && (
-          <Badge variant="default" className="gap-1">
-            <Sparkles className="w-3 h-3" /> Featured
-          </Badge>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-semibold border border-primary/20">
+            <Sparkles className="w-2.5 h-2.5" /> Featured
+          </span>
         )}
         {product.isTrending && (
-          <Badge variant="warning" className="gap-1">
-            <TrendingUp className="w-3 h-3" /> Trending
-          </Badge>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-semibold border border-amber-500/20">
+            <TrendingUp className="w-2.5 h-2.5" /> Trending
+          </span>
         )}
-        {new Date().getTime() - new Date(product.createdAt).getTime() < 7 * 86400000 && (
-          <Badge variant="success">New</Badge>
+        {discount > 0 && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-green-500/10 text-green-600 dark:text-green-400 text-[10px] font-bold border border-green-500/20">
+            {discount}% OFF
+          </span>
         )}
       </div>
 
       {/* Wishlist */}
       <button
         onClick={() => toggleWishlist(product.id)}
-        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all hover:scale-110"
+        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center transition-all hover:scale-110 hover:border-primary/50"
         aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
       >
         <Heart
-          className={`w-4 h-4 transition-colors ${
-            isWishlisted ? "fill-red-500 text-red-500" : "text-white/70"
+          className={`w-3.5 h-3.5 transition-colors ${
+            isWishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground"
           }`}
         />
       </button>
 
       {/* Image */}
       <Link href={`/products/${product.id}`}>
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-white/5 to-white/0">
+        <div className="relative aspect-square overflow-hidden bg-secondary/50">
           {product.image ? (
             <Image
               src={product.image}
@@ -74,7 +94,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-white/20">
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
               <ShoppingBagIcon />
             </div>
           )}
@@ -83,38 +103,35 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
 
       {/* Content */}
       <div className="p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Badge variant="secondary" className="text-[10px]">
+        {/* Platform & Category */}
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground">
             {product.platform}
-          </Badge>
-          <Badge variant="outline" className="text-[10px]">
+          </span>
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border border-border text-muted-foreground">
             {product.category}
-          </Badge>
+          </span>
         </div>
 
         <Link href={`/products/${product.id}`}>
-          <h3 className="text-sm font-semibold text-white group-hover:text-purple-300 transition-colors line-clamp-2 mb-1">
+          <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-1">
             {product.title}
           </h3>
         </Link>
 
-        <p className="text-xs text-white/50 line-clamp-2 mb-3">
+        <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
           {truncateText(product.description, 80)}
         </p>
 
         {/* Rating */}
         {product.rating && (
-          <div className="flex items-center gap-1 mb-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                className={`w-3 h-3 ${
-                  i < Math.floor(product.rating!) ? "fill-yellow-400 text-yellow-400" : "text-white/20"
-                }`}
-              />
-            ))}
-            <span className="text-xs text-white/40 ml-1">
-              ({product.reviewCount || 0})
+          <div className="flex items-center gap-1.5 mb-3">
+            <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-green-500/10 border border-green-500/20">
+              <span className="text-xs font-bold text-green-600 dark:text-green-400">{product.rating}</span>
+              <Star className="w-2.5 h-2.5 fill-green-500 text-green-500" />
+            </div>
+            <span className="text-xs text-muted-foreground">
+              ({product.reviewCount?.toLocaleString() || 0})
             </span>
           </div>
         )}
@@ -124,23 +141,45 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           <div>
             {product.price && (
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-white">
+                <span className="text-lg font-bold text-foreground">
                   {formatPrice(product.price, product.currency)}
                 </span>
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-xs text-white/40 line-through">
+                  <span className="text-xs text-muted-foreground line-through">
                     {formatPrice(product.originalPrice, product.currency)}
                   </span>
                 )}
               </div>
             )}
           </div>
-          <Button size="sm" onClick={handleBuyNow} className="gap-1">
-            Buy Now <ExternalLink className="w-3 h-3" />
-          </Button>
+          {product.isAffiliate ? (
+            <button
+              onClick={handleBuyNow}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold shadow-[0_2px_8px_var(--glow-primary)] hover:scale-[1.02] transition-all"
+            >
+              Buy <ExternalLink className="w-3 h-3" />
+            </button>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                justAdded || isInCart
+                  ? "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30"
+                  : "bg-primary text-primary-foreground shadow-[0_2px_8px_var(--glow-primary)] hover:scale-[1.02]"
+              }`}
+            >
+              {justAdded ? (
+                <><Check className="w-3 h-3" /> Added</>
+              ) : isInCart ? (
+                <><Check className="w-3 h-3" /> In Cart</>
+              ) : (
+                <><ShoppingCart className="w-3 h-3" /> Add</>
+              )}
+            </button>
+          )}
         </div>
 
-        <p className="text-[10px] text-white/30 mt-2">
+        <p className="text-[10px] text-muted-foreground/60 mt-2">
           Added {getRelativeTime(product.createdAt)}
         </p>
       </div>

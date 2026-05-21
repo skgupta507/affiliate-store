@@ -1,11 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 40" fill="none">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#a855f7"/>
-      <stop offset="100%" style="stop-color:#3b82f6"/>
+    <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c2410c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="16" fill="url(#grad)"/>
-  <path d="M32 16L20 44h6l2-5h8l2 5h6L32 16zm-2 18l2-6 2 6h-4z" fill="white" opacity="0.95"/>
-  <path d="M22 46h20v2H22z" fill="white" opacity="0.5"/>
+  <!-- Icon -->
+  <rect width="36" height="36" x="2" y="2" rx="7" fill="url(#lg)"/>
+  <path d="M20 8L10 16v14h7v-7h6v7h7V16L20 8z" fill="white" opacity="0.95"/>
+  <rect x="16" y="17" width="3" height="3" rx="0.4" fill="url(#lg)" opacity="0.5"/>
+  <rect x="21" y="17" width="3" height="3" rx="0.4" fill="url(#lg)" opacity="0.5"/>
+  <!-- Lamp/pendant detail -->
+  <line x1="20" y1="10" x2="20" y2="13" stroke="white" stroke-width="0.8" opacity="0.6"/>
+  <circle cx="20" cy="14" r="1.2" fill="white" opacity="0.5"/>
+  <!-- Text -->
+  <text x="46" y="26" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="15" fill="#1c1917">TheIdea</text>
+  <text x="128" y="26" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="15" fill="url(#lg)">Decorator</text>
 </svg>

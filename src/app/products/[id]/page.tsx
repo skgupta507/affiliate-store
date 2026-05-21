@@ -26,6 +26,7 @@ import {
   RotateCcw,
   CheckCircle,
   List,
+  ShoppingCart,
 } from "lucide-react";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -38,6 +39,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     addToRecentlyViewed,
     watchlists,
     addToWatchlist,
+    addToCart,
+    cart,
   } = useStore();
   const product = products.find((p) => p.id === id);
 
@@ -72,9 +75,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
+  const isInCart = cart.some((item) => item.productId === product.id);
+
   const handleBuyNow = () => {
-    incrementClicks(product.id);
-    window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
+    if (product.isAffiliate) {
+      incrementClicks(product.id);
+      window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
+    } else {
+      addToCart(product.id);
+    }
+  };
+
+  const handleAddToCart = () => {
+    addToCart(product.id);
   };
 
   const handleShare = async () => {
@@ -340,9 +353,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
               {/* Desktop Action Buttons */}
               <div className="hidden lg:flex gap-3 pt-4 border-t border-white/10">
-                <Button size="lg" onClick={handleBuyNow} className="flex-1 gap-2 text-base">
-                  Buy Now on {product.platform} <ExternalLink className="w-4 h-4" />
-                </Button>
+                {product.isAffiliate ? (
+                  <Button size="lg" onClick={handleBuyNow} className="flex-1 gap-2 text-base">
+                    Buy Now on {product.platform} <ExternalLink className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <>
+                    <Button size="lg" onClick={handleAddToCart} className="flex-1 gap-2 text-base">
+                      {isInCart ? "Added to Cart ✓" : "Add to Cart"} <ShoppingCart className="w-4 h-4" />
+                    </Button>
+                    <Link href="/cart">
+                      <Button variant="outline" size="lg" className="gap-2">
+                        Buy Now
+                      </Button>
+                    </Link>
+                  </>
+                )}
                 <Button
                   variant="outline"
                   size="lg"

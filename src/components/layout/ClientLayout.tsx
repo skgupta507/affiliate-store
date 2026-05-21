@@ -11,15 +11,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { theme } = useStore();
 
   useEffect(() => {
-    document.documentElement.classList.toggle("light", theme === "light");
     document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.classList.toggle("light", theme === "light");
   }, [theme]);
 
   return (
-    <div className={theme === "light" ? "light" : ""}>
+    <div className={theme === "dark" ? "dark" : ""}>
       <FirestoreSync />
       <Navbar />
-      <main className="pt-24 min-h-screen">{children}</main>
+      <main className="pt-16 min-h-screen">{children}</main>
       <Footer />
       <ToastContainer />
     </div>

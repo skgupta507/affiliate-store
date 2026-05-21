@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Product, Category, ThemeMode, User, Watchlist } from "@/types";
+import { Product, Category, ThemeMode, User, Watchlist, CartItem, Order, Address } from "@/types";
 import { generateId } from "@/lib/utils";
 
 interface AppState {
@@ -18,6 +18,28 @@ interface AppState {
   addCategory: (category: Category) => void;
   updateCategory: (id: string, category: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
+
+  // Cart
+  cart: CartItem[];
+  addToCart: (productId: string, quantity?: number) => void;
+  removeFromCart: (productId: string) => void;
+  updateCartQuantity: (productId: string, quantity: number) => void;
+  clearCart: () => void;
+  getCartTotal: () => number;
+  getCartCount: () => number;
+
+  // Orders
+  orders: Order[];
+  addOrder: (order: Order) => void;
+  updateOrderStatus: (orderId: string, status: Order["status"]) => void;
+  cancelOrder: (orderId: string) => void;
+
+  // Addresses
+  addresses: Address[];
+  addAddress: (address: Address) => void;
+  updateAddress: (id: string, address: Partial<Address>) => void;
+  deleteAddress: (id: string) => void;
+  setDefaultAddress: (id: string) => void;
 
   // Wishlist (simple favorites)
   wishlist: string[];
@@ -90,6 +112,10 @@ export const useStore = create<AppState>()(
         { id: "6", name: "Beauty", slug: "beauty", productCount: 0 },
         { id: "7", name: "Toys", slug: "toys", productCount: 0 },
         { id: "8", name: "Automotive", slug: "automotive", productCount: 0 },
+        { id: "9", name: "Home Decor", slug: "home-decor", productCount: 0 },
+        { id: "10", name: "Furniture", slug: "furniture", productCount: 0 },
+        { id: "11", name: "Lighting", slug: "lighting", productCount: 0 },
+        { id: "12", name: "Wall Art", slug: "wall-art", productCount: 0 },
       ],
       addCategory: (category) =>
         set((state) => ({ categories: [...state.categories, category] })),
@@ -102,6 +128,92 @@ export const useStore = create<AppState>()(
       deleteCategory: (id) =>
         set((state) => ({
           categories: state.categories.filter((c) => c.id !== id),
+        })),
+
+      // Cart
+      cart: [],
+      addToCart: (productId, quantity = 1) =>
+        set((state) => {
+          const existing = state.cart.find((item) => item.productId === productId);
+          if (existing) {
+            return {
+              cart: state.cart.map((item) =>
+                item.productId === productId
+                  ? { ...item, quantity: item.quantity + quantity }
+                  : item
+              ),
+            };
+          }
+          return {
+            cart: [...state.cart, { productId, quantity, addedAt: new Date().toISOString() }],
+          };
+        }),
+      removeFromCart: (productId) =>
+        set((state) => ({
+          cart: state.cart.filter((item) => item.productId !== productId),
+        })),
+      updateCartQuantity: (productId, quantity) =>
+        set((state) => {
+          if (quantity <= 0) {
+            return { cart: state.cart.filter((item) => item.productId !== productId) };
+          }
+          return {
+            cart: state.cart.map((item) =>
+              item.productId === productId ? { ...item, quantity } : item
+            ),
+          };
+        }),
+      clearCart: () => set({ cart: [] }),
+      getCartTotal: () => {
+        const state = get();
+        return state.cart.reduce((total, item) => {
+          const product = state.products.find((p) => p.id === item.productId);
+          return total + (product?.price || 0) * item.quantity;
+        }, 0);
+      },
+      getCartCount: () => {
+        return get().cart.reduce((count, item) => count + item.quantity, 0);
+      },
+
+      // Orders
+      orders: [],
+      addOrder: (order) =>
+        set((state) => ({ orders: [order, ...state.orders] })),
+      updateOrderStatus: (orderId, status) =>
+        set((state) => ({
+          orders: state.orders.map((o) =>
+            o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o
+          ),
+        })),
+      cancelOrder: (orderId) =>
+        set((state) => ({
+          orders: state.orders.map((o) =>
+            o.id === orderId
+              ? { ...o, status: "cancelled" as const, updatedAt: new Date().toISOString() }
+              : o
+          ),
+        })),
+
+      // Addresses
+      addresses: [],
+      addAddress: (address) =>
+        set((state) => ({ addresses: [...state.addresses, { ...address, id: address.id || generateId() }] })),
+      updateAddress: (id, updates) =>
+        set((state) => ({
+          addresses: state.addresses.map((a) =>
+            a.id === id ? { ...a, ...updates } : a
+          ),
+        })),
+      deleteAddress: (id) =>
+        set((state) => ({
+          addresses: state.addresses.filter((a) => a.id !== id),
+        })),
+      setDefaultAddress: (id) =>
+        set((state) => ({
+          addresses: state.addresses.map((a) => ({
+            ...a,
+            isDefault: a.id === id,
+          })),
         })),
 
       // Wishlist
@@ -183,11 +295,14 @@ export const useStore = create<AppState>()(
       setSearchQuery: (query) => set({ searchQuery: query }),
     }),
     {
-      name: "affiliate-store",
+      name: "theideadecorator-store",
       partialize: (state) => ({
         products: state.products,
         categories: state.categories,
         wishlist: state.wishlist,
+        cart: state.cart,
+        orders: state.orders,
+        addresses: state.addresses,
         watchlists: state.watchlists,
         recentlyViewed: state.recentlyViewed,
         theme: state.theme,
