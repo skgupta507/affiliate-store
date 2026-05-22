@@ -53,8 +53,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   if (!product) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <h1 className="text-2xl font-bold text-white mb-4">Product Not Found</h1>
-        <p className="text-white/50 mb-6">The product you&apos;re looking for doesn&apos;t exist.</p>
+        <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
+        <p className="text-muted-foreground mb-6">The product you&apos;re looking for doesn&apos;t exist.</p>
         <Link href="/products">
           <Button variant="outline" className="gap-2">
             <ArrowLeft className="w-4 h-4" /> Back to Products
@@ -76,9 +76,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     : 0;
 
   const isInCart = cart.some((item) => item.productId === product.id);
+  const isAffiliate = product.isAffiliate || (product.affiliateUrl && product.affiliateUrl.trim() !== "");
 
   const handleBuyNow = () => {
-    if (product.isAffiliate) {
+    if (isAffiliate) {
       incrementClicks(product.id);
       window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
     } else {
@@ -87,7 +88,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const handleAddToCart = () => {
-    addToCart(product.id);
+    if (isAffiliate) {
+      incrementClicks(product.id);
+      window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
+    } else {
+      addToCart(product.id);
+    }
   };
 
   const handleShare = async () => {
@@ -106,14 +112,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     <div className="px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-white/40 mb-6">
-          <Link href="/" className="hover:text-white/60">Home</Link>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <Link href="/" className="hover:text-muted-foreground">Home</Link>
           <span>/</span>
-          <Link href="/products" className="hover:text-white/60">Products</Link>
+          <Link href="/products" className="hover:text-muted-foreground">Products</Link>
           <span>/</span>
-          <Link href={`/products?category=${product.category}`} className="hover:text-white/60">{product.category}</Link>
+          <Link href={`/products?category=${product.category}`} className="hover:text-muted-foreground">{product.category}</Link>
           <span>/</span>
-          <span className="text-white/60 truncate max-w-[200px]">{product.title}</span>
+          <span className="text-muted-foreground truncate max-w-[200px]">{product.title}</span>
         </div>
 
         {/* Main Product Section */}
@@ -125,17 +131,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               animate={{ opacity: 1, x: 0 }}
               className="sticky top-28"
             >
-              <div className="relative aspect-square rounded-2xl overflow-hidden border border-white/10 bg-white/5">
+              <div className="relative aspect-square rounded-2xl overflow-hidden border border-border bg-card">
                 {product.image ? (
                   <Image
                     src={product.image}
                     alt={product.title}
                     fill
+                    sizes="(max-width: 768px) 100vw, 40vw"
                     className="object-contain p-4"
                     priority
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white/20">
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
                     <svg className="w-32 h-32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
@@ -169,7 +176,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 >
                   <Heart
                     className={`w-5 h-5 transition-colors ${
-                      isWishlisted ? "fill-red-500 text-red-500" : "text-white/70"
+                      isWishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground"
                     }`}
                   />
                 </button>
@@ -207,7 +214,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
 
               {/* Title */}
-              <h1 className="text-2xl lg:text-3xl font-bold text-white leading-tight">
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight">
                 {product.title}
               </h1>
 
@@ -227,13 +234,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                             ? "fill-yellow-400 text-yellow-400"
                             : i < product.rating!
                             ? "fill-yellow-400/50 text-yellow-400"
-                            : "text-white/20"
+                            : "text-muted-foreground/30"
                         }`}
                       />
                     ))}
                   </div>
                   {product.reviewCount && (
-                    <span className="text-sm text-white/50">
+                    <span className="text-sm text-muted-foreground">
                       {product.reviewCount.toLocaleString()} ratings & reviews
                     </span>
                   )}
@@ -241,15 +248,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               )}
 
               {/* Price Section */}
-              <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+              <div className="p-5 rounded-2xl bg-card border border-border">
                 <div className="flex items-baseline gap-3 flex-wrap">
                   {product.price && (
-                    <span className="text-3xl font-bold text-white">
+                    <span className="text-3xl font-bold text-foreground">
                       {formatPrice(product.price, product.currency)}
                     </span>
                   )}
                   {product.originalPrice && product.originalPrice > (product.price || 0) && (
-                    <span className="text-lg text-white/40 line-through">
+                    <span className="text-lg text-muted-foreground line-through">
                       {formatPrice(product.originalPrice, product.currency)}
                     </span>
                   )}
@@ -260,7 +267,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
                 {product.price && (
-                  <p className="text-xs text-white/30 mt-2">
+                  <p className="text-xs text-muted-foreground/60 mt-2">
                     Inclusive of all taxes. Price may vary on the seller&apos;s website.
                   </p>
                 )}
@@ -268,28 +275,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
               {/* Highlights */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-center">
+                <div className="p-3 rounded-xl bg-card border border-border/50 text-center">
                   <Truck className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-white/50">Free Delivery</p>
+                  <p className="text-[10px] text-muted-foreground">Free Delivery</p>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-center">
+                <div className="p-3 rounded-xl bg-card border border-border/50 text-center">
                   <RotateCcw className="w-5 h-5 text-green-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-white/50">Easy Returns</p>
+                  <p className="text-[10px] text-muted-foreground">Easy Returns</p>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-center">
+                <div className="p-3 rounded-xl bg-card border border-border/50 text-center">
                   <ShieldCheck className="w-5 h-5 text-purple-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-white/50">Secure Payment</p>
+                  <p className="text-[10px] text-muted-foreground">Secure Payment</p>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-center">
+                <div className="p-3 rounded-xl bg-card border border-border/50 text-center">
                   <CheckCircle className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-white/50">Genuine Product</p>
+                  <p className="text-[10px] text-muted-foreground">Genuine Product</p>
                 </div>
               </div>
 
               {/* Description */}
               <div>
-                <h3 className="text-sm font-semibold text-white/70 mb-3">Description</h3>
-                <p className="text-sm text-white/60 leading-relaxed whitespace-pre-line">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">Description</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                   {product.description || "No description available for this product."}
                 </p>
               </div>
@@ -297,7 +304,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {/* Tags */}
               {product.tags.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-white/70 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
                     <Tag className="w-4 h-4" /> Tags
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -313,7 +320,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {/* Add to Watchlist */}
               {watchlists.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-white/70 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
                     <List className="w-4 h-4" /> Add to Watchlist
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -327,7 +334,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                             isInList
                               ? "bg-green-500/10 text-green-400 border border-green-500/20"
-                              : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white"
+                              : "bg-card text-muted-foreground border border-border hover:bg-secondary hover:text-foreground"
                           }`}
                         >
                           {isInList ? "✓ " : "+ "}{wl.name}
@@ -339,7 +346,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               )}
 
               {/* Meta info */}
-              <div className="flex items-center gap-4 text-xs text-white/40 pt-2">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" /> Added {getRelativeTime(product.createdAt)}
                 </span>
@@ -352,7 +359,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
 
               {/* Desktop Action Buttons */}
-              <div className="hidden lg:flex gap-3 pt-4 border-t border-white/10">
+              <div className="hidden lg:flex gap-3 pt-4 border-t border-border">
                 {product.isAffiliate ? (
                   <Button size="lg" onClick={handleBuyNow} className="flex-1 gap-2 text-base">
                     Buy Now on {product.platform} <ExternalLink className="w-4 h-4" />
@@ -392,9 +399,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         {relatedProducts.length > 0 && (
           <section className="mt-16">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">Similar Products</h2>
+              <h2 className="text-xl font-bold text-foreground">Similar Products</h2>
               <Link href={`/products?category=${product.category}`}>
-                <Button variant="ghost" className="gap-1 text-white/60 text-sm">
+                <Button variant="ghost" className="gap-1 text-muted-foreground text-sm">
                   View All <ArrowLeft className="w-3 h-3 rotate-180" />
                 </Button>
               </Link>
@@ -407,7 +414,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         {recommendedProducts.length > 0 && (
           <section className="mt-16">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-foreground">
                 More from {product.platform}
               </h2>
             </div>
@@ -418,7 +425,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         {/* You May Also Like */}
         {products.length > 5 && (
           <section className="mt-16">
-            <h2 className="text-xl font-bold text-white mb-6">You May Also Like</h2>
+            <h2 className="text-xl font-bold text-foreground mb-6">You May Also Like</h2>
             <ProductGrid
               products={products
                 .filter((p) => p.id !== product.id && !relatedProducts.find((r) => r.id === p.id))

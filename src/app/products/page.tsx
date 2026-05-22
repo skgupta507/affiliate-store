@@ -69,8 +69,8 @@ export default function ProductsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-white mb-2">All Products</h1>
-          <p className="text-white/50">
+          <h1 className="text-3xl font-bold text-foreground mb-2">All Products</h1>
+          <p className="text-muted-foreground">
             Browse {products.length} curated affiliate deals
           </p>
         </motion.div>
@@ -78,7 +78,7 @@ export default function ProductsPage() {
         {/* Search & Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search products..."
               value={search}
@@ -90,7 +90,7 @@ export default function ProductsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="h-10 px-4 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="h-10 px-4 rounded-xl border border-border bg-card backdrop-blur-sm text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -103,7 +103,7 @@ export default function ProductsPage() {
               variant="outline"
               size="icon"
               onClick={() => setShowFilters(!showFilters)}
-              className={showFilters ? "bg-white/10" : ""}
+              className={showFilters ? "bg-secondary" : ""}
             >
               <SlidersHorizontal className="w-4 h-4" />
             </Button>
@@ -117,8 +117,8 @@ export default function ProductsPage() {
             animate={{ opacity: 1, height: "auto" }}
             className="mb-8"
           >
-            <div className="p-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
-              <p className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
+            <div className="p-4 rounded-2xl border border-border bg-card backdrop-blur-sm">
+              <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                 <Filter className="w-4 h-4" /> Categories
               </p>
               <div className="flex flex-wrap gap-2">
@@ -126,8 +126,8 @@ export default function ProductsPage() {
                   onClick={() => setSelectedCategory("all")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     selectedCategory === "all"
-                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                      : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
+                      ? "bg-purple-500/20 text-primary border border-purple-500/30"
+                      : "bg-card text-muted-foreground border border-border hover:bg-secondary"
                   }`}
                 >
                   All ({products.length})
@@ -140,8 +140,8 @@ export default function ProductsPage() {
                       onClick={() => setSelectedCategory(cat.name)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         selectedCategory === cat.name
-                          ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                          : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
+                          ? "bg-purple-500/20 text-primary border border-purple-500/30"
+                          : "bg-card text-muted-foreground border border-border hover:bg-secondary"
                       }`}
                     >
                       {cat.name} ({count})

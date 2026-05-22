@@ -65,15 +65,15 @@ export function AdminSettings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Database className="w-5 h-5 text-purple-400" />
+            <Database className="w-5 h-5 text-primary" />
             Data Management
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-secondary">
             <div>
-              <p className="text-sm font-medium text-white">Export Data</p>
-              <p className="text-xs text-white/40">
+              <p className="text-sm font-medium text-foreground">Export Data</p>
+              <p className="text-xs text-muted-foreground">
                 Download all products and categories as JSON
               </p>
             </div>
@@ -82,10 +82,10 @@ export function AdminSettings() {
             </Button>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-secondary">
             <div>
-              <p className="text-sm font-medium text-white">Import Data</p>
-              <p className="text-xs text-white/40">
+              <p className="text-sm font-medium text-foreground">Import Data</p>
+              <p className="text-xs text-muted-foreground">
                 Import products from a JSON file
               </p>
             </div>
@@ -119,20 +119,20 @@ export function AdminSettings() {
         <CardContent>
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-white/50">Storage Type</span>
-              <span className="text-white">LocalStorage (Browser)</span>
+              <span className="text-muted-foreground">Storage Type</span>
+              <span className="text-foreground">LocalStorage (Browser)</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-white/50">Products Stored</span>
-              <span className="text-white">{products.length}</span>
+              <span className="text-muted-foreground">Products Stored</span>
+              <span className="text-foreground">{products.length}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-white/50">Categories</span>
-              <span className="text-white">{categories.length}</span>
+              <span className="text-muted-foreground">Categories</span>
+              <span className="text-foreground">{categories.length}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-white/50">Estimated Size</span>
-              <span className="text-white">
+              <span className="text-muted-foreground">Estimated Size</span>
+              <span className="text-foreground">
                 {(new Blob([JSON.stringify({ products, categories })]).size / 1024).toFixed(1)} KB
               </span>
             </div>

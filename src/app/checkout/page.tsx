@@ -7,6 +7,7 @@ import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatPrice, generateId } from "@/lib/utils";
+import { initiateRazorpayPayment } from "@/lib/razorpay";
 import { Order, Address } from "@/types";
 import {
   ArrowLeft,
@@ -74,31 +75,51 @@ export default function CheckoutPage() {
     setPincode("");
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!selectedAddress) return;
 
-    const order: Order = {
-      id: generateId(),
-      items: cartItems.map((item) => ({
-        productId: item.productId,
-        title: item.product?.title || "",
-        image: item.product?.image || "",
-        price: item.product?.price || 0,
-        quantity: item.quantity,
-      })),
-      status: "confirmed",
-      totalAmount: total,
-      shippingAddress: selectedAddress,
-      paymentMethod,
-      paymentStatus: paymentMethod === "cod" ? "pending" : "paid",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      estimatedDelivery: new Date(Date.now() + 5 * 86400000).toISOString(),
+    const createOrder = () => {
+      const order: Order = {
+        id: generateId(),
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          title: item.product?.title || "",
+          image: item.product?.image || "",
+          price: item.product?.price || 0,
+          quantity: item.quantity,
+        })),
+        status: "confirmed",
+        totalAmount: total,
+        shippingAddress: selectedAddress,
+        paymentMethod,
+        paymentStatus: paymentMethod === "cod" ? "pending" : "paid",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        estimatedDelivery: new Date(Date.now() + 5 * 86400000).toISOString(),
+      };
+
+      addOrder(order);
+      clearCart();
+      setOrderPlaced(true);
     };
 
-    addOrder(order);
-    clearCart();
-    setOrderPlaced(true);
+    if (paymentMethod === "razorpay") {
+      await initiateRazorpayPayment({
+        amount: total * 100, // Convert to paise
+        name: "TheIdeaDecorator",
+        description: `Order - ${cartItems.length} items`,
+        customerName: selectedAddress.fullName,
+        customerPhone: selectedAddress.phone,
+        onSuccess: () => {
+          createOrder();
+        },
+        onFailure: (error) => {
+          console.error("Payment failed:", error);
+        },
+      });
+    } else {
+      createOrder();
+    }
   };
 
   if (orderPlaced) {
@@ -258,10 +279,8 @@ export default function CheckoutPage() {
 
                 <div className="space-y-3">
                   {[
+                    { id: "razorpay", label: "Pay Online (Razorpay)", desc: "UPI, Cards, Net Banking, Wallets" },
                     { id: "cod", label: "Cash on Delivery", desc: "Pay when you receive" },
-                    { id: "upi", label: "UPI Payment", desc: "Google Pay, PhonePe, Paytm" },
-                    { id: "card", label: "Credit/Debit Card", desc: "Visa, Mastercard, RuPay" },
-                    { id: "netbanking", label: "Net Banking", desc: "All major banks" },
                   ].map((method) => (
                     <button
                       key={method.id}

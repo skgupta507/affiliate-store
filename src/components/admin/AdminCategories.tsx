@@ -76,11 +76,11 @@ export function AdminCategories() {
             return (
               <div
                 key={category.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5"
+                className="flex items-center justify-between p-3 rounded-xl bg-secondary border border-white/5"
               >
                 <div>
-                  <p className="text-sm font-medium text-white">{category.name}</p>
-                  <p className="text-xs text-white/40">
+                  <p className="text-sm font-medium text-foreground">{category.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     {count} {count === 1 ? "product" : "products"}
                   </p>
                 </div>

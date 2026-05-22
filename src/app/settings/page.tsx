@@ -16,17 +16,17 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-8">Settings</h1>
 
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Palette className="w-5 h-5 text-purple-400" />
+                <Palette className="w-5 h-5 text-primary" />
                 Appearance
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-card">
                 <div className="flex items-center gap-3">
                   {theme === "dark" ? (
                     <Moon className="w-5 h-5 text-blue-400" />
@@ -34,8 +34,8 @@ export default function SettingsPage() {
                     <Sun className="w-5 h-5 text-yellow-400" />
                   )}
                   <div>
-                    <p className="text-sm font-medium text-white">Theme</p>
-                    <p className="text-xs text-white/40">
+                    <p className="text-sm font-medium text-foreground">Theme</p>
+                    <p className="text-xs text-muted-foreground">
                       Currently using {theme} mode
                     </p>
                   </div>

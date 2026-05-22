@@ -19,11 +19,11 @@ export default function WishlistPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3 mb-2">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3 mb-2">
             <Heart className="w-7 h-7 text-red-400" />
             My Wishlist
           </h1>
-          <p className="text-white/50">
+          <p className="text-muted-foreground">
             {wishlistProducts.length} saved {wishlistProducts.length === 1 ? "item" : "items"}
           </p>
         </motion.div>
@@ -32,13 +32,13 @@ export default function WishlistPage() {
           <ProductGrid products={wishlistProducts} />
         ) : (
           <div className="text-center py-20">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-border flex items-center justify-center">
               <Heart className="w-8 h-8 text-white/20" />
             </div>
             <h3 className="text-lg font-semibold text-white/70 mb-2">
               Your wishlist is empty
             </h3>
-            <p className="text-sm text-white/40 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               Browse products and click the heart icon to save items here.
             </p>
             <Link href="/products">

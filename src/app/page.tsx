@@ -69,12 +69,12 @@ export default function HomePage() {
 
   return (
     <div className="relative">
-      {/* Hero Section - Myrtle-inspired with text loop */}
-      <section className="relative flex min-h-[80vh] flex-col items-center justify-center overflow-hidden px-4 py-20 md:py-28">
+      {/* Hero Section - Compact, right below navbar */}
+      <section className="relative overflow-hidden px-4 py-12 md:py-16">
         {/* Background gradient orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-primary/3 rounded-full blur-3xl animate-float" style={{ animationDelay: "3s" }} />
+          <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-amber-500/5 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 mx-auto max-w-4xl text-center">
@@ -83,8 +83,8 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="mb-6 font-bold text-4xl sm:text-5xl md:text-7xl leading-tight">
-              <span className="block text-foreground">Discover beautiful</span>
+            <h1 className="mb-4 font-bold text-3xl sm:text-4xl md:text-5xl leading-tight">
+              <span className="text-foreground">Discover beautiful </span>
               <TextLoop />
             </h1>
           </motion.div>
@@ -93,19 +93,19 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="mx-auto mb-8 max-w-2xl text-balance text-muted-foreground text-lg md:text-xl"
+            className="mx-auto mb-6 max-w-xl text-muted-foreground text-base md:text-lg"
           >
-            Your one-stop marketplace for curated interior design, home decor, and lifestyle products. Shop directly or find the best deals.
+            Curated interior design, home decor, and lifestyle products. Shop directly or find the best deals.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3"
           >
             <Link href="/products">
-              <button className="group relative h-12 overflow-hidden rounded-lg bg-primary px-8 font-semibold text-primary-foreground shadow-[0_8px_24px_var(--glow-primary)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_32px_var(--glow-primary)]">
+              <button className="group relative h-11 overflow-hidden rounded-lg bg-primary px-6 font-semibold text-primary-foreground shadow-[0_8px_24px_var(--glow-primary)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_32px_var(--glow-primary)]">
                 <span className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent" />
                 <span className="relative flex items-center gap-2">
                   Start Shopping
@@ -114,7 +114,7 @@ export default function HomePage() {
               </button>
             </Link>
             <Link href="/deals">
-              <button className="h-12 rounded-lg border-2 border-primary/30 bg-secondary/50 px-8 font-semibold text-foreground transition-all duration-300 hover:border-primary/60 hover:bg-secondary flex items-center gap-2">
+              <button className="h-11 rounded-lg border-2 border-primary/30 bg-secondary/50 px-6 font-semibold text-foreground transition-all duration-300 hover:border-primary/60 hover:bg-secondary flex items-center gap-2">
                 <Zap className="w-4 h-4" />
                 Today&apos;s Deals
               </button>
@@ -122,12 +122,12 @@ export default function HomePage() {
           </motion.div>
         </div>
 
-        {/* Feature highlights - bento style */}
+        {/* Feature highlights - inline row */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3 mt-16 max-w-3xl mx-auto w-full px-4"
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="relative z-10 grid grid-cols-4 gap-3 mt-10 max-w-2xl mx-auto w-full px-4"
         >
           {[
             { label: "Products", value: products.length.toString(), icon: ShoppingCart },
@@ -137,11 +137,11 @@ export default function HomePage() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="card-glow-hover p-4 rounded-xl bg-card border border-border text-center"
+              className="p-3 rounded-lg bg-card border border-border text-center"
             >
-              <stat.icon className="w-5 h-5 text-primary mb-2 mx-auto" />
-              <p className="text-xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <stat.icon className="w-4 h-4 text-primary mb-1 mx-auto" />
+              <p className="text-sm font-bold text-foreground">{stat.value}</p>
+              <p className="text-[10px] text-muted-foreground">{stat.label}</p>
             </div>
           ))}
         </motion.div>

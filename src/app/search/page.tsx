@@ -39,9 +39,9 @@ export default function SearchPage() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-2xl mx-auto text-center mb-12"
         >
-          <h1 className="text-3xl font-bold text-white mb-6">Search Products</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-6">Search Products</h1>
           <div className="relative">
-            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               placeholder="Search by name, category, or tag..."
               value={query}
@@ -54,12 +54,12 @@ export default function SearchPage() {
           {/* Suggestions */}
           {!query && suggestions.length > 0 && (
             <div className="mt-4 flex flex-wrap justify-center gap-2">
-              <span className="text-xs text-white/40">Try:</span>
+              <span className="text-xs text-muted-foreground">Try:</span>
               {suggestions.map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setQuery(tag)}
-                  className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                  className="text-xs px-3 py-1 rounded-full bg-card border border-border text-white/60 hover:text-foreground hover:bg-white/10 transition-all"
                 >
                   {tag}
                 </button>

@@ -24,8 +24,11 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
+  // Determine if product is affiliate - check both the flag and if it has an affiliate URL
+  const isAffiliate = product.isAffiliate || (product.affiliateUrl && product.affiliateUrl.trim() !== "");
+
   const handleBuyNow = () => {
-    if (product.isAffiliate) {
+    if (isAffiliate) {
       incrementClicks(product.id);
       window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
     } else {
@@ -38,9 +41,14 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product.id);
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 2000);
+    if (isAffiliate) {
+      incrementClicks(product.id);
+      window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
+    } else {
+      addToCart(product.id);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 2000);
+    }
   };
 
   return (
@@ -91,7 +99,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
               alt={product.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 16vw"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
@@ -152,7 +160,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
               </div>
             )}
           </div>
-          {product.isAffiliate ? (
+          {isAffiliate ? (
             <button
               onClick={handleBuyNow}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold shadow-[0_2px_8px_var(--glow-primary)] hover:scale-[1.02] transition-all"

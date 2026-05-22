@@ -48,10 +48,10 @@ export default function CategoriesPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-12 text-center"
         >
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
             Browse Categories
           </h1>
-          <p className="text-white/50 max-w-lg mx-auto">
+          <p className="text-muted-foreground max-w-lg mx-auto">
             Explore products organized by category. Find exactly what you&apos;re looking for.
           </p>
         </motion.div>
@@ -70,23 +70,23 @@ export default function CategoriesPage() {
                 transition={{ delay: index * 0.05 }}
               >
                 <Link href={`/products?category=${category.name}`}>
-                  <div className="group relative p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/5 cursor-pointer">
+                  <div className="group relative p-6 rounded-2xl border border-border bg-card backdrop-blur-xl hover:bg-secondary transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/5 cursor-pointer">
                     <div
                       className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${
                         categoryGradients[index % categoryGradients.length]
-                      } flex items-center justify-center mb-4 text-white/70 group-hover:text-white transition-colors`}
+                      } flex items-center justify-center mb-4 text-white/70 group-hover:text-foreground transition-colors`}
                     >
                       {categoryIcons[category.name] || <Sparkles className="w-8 h-8" />}
                     </div>
 
-                    <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">
+                    <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-purple-300 transition-colors">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-white/40">
+                    <p className="text-sm text-muted-foreground">
                       {productCount} {productCount === 1 ? "product" : "products"}
                     </p>
 
-                    <ArrowRight className="absolute top-6 right-6 w-5 h-5 text-white/20 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="absolute top-6 right-6 w-5 h-5 text-white/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </div>
                 </Link>
               </motion.div>

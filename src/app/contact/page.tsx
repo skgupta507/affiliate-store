@@ -30,8 +30,8 @@ export default function ContactPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-3xl font-bold text-white mb-3">Get in Touch</h1>
-          <p className="text-white/50">
+          <h1 className="text-3xl font-bold text-foreground mb-3">Get in Touch</h1>
+          <p className="text-muted-foreground">
             Have a question or suggestion? We&apos;d love to hear from you.
           </p>
         </motion.div>
@@ -40,7 +40,7 @@ export default function ContactPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="p-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl"
+          className="p-8 rounded-2xl border border-border bg-card backdrop-blur-xl"
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -78,7 +78,7 @@ export default function ContactPage() {
                 placeholder="Your message..."
                 required
                 rows={5}
-                className="flex w-full rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 resize-none"
+                className="flex w-full rounded-xl border border-border bg-card backdrop-blur-sm px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 resize-none"
               />
             </div>
 
@@ -94,18 +94,18 @@ export default function ContactPage() {
           transition={{ delay: 0.2 }}
           className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8"
         >
-          <div className="p-4 rounded-xl border border-white/10 bg-white/5 flex items-center gap-3">
-            <Mail className="w-5 h-5 text-purple-400" />
+          <div className="p-4 rounded-xl border border-border bg-card flex items-center gap-3">
+            <Mail className="w-5 h-5 text-primary" />
             <div>
-              <p className="text-sm font-medium text-white">Email</p>
-              <p className="text-xs text-white/40">hello@affiliatehub.com</p>
+              <p className="text-sm font-medium text-foreground">Email</p>
+              <p className="text-xs text-muted-foreground">hello@affiliatehub.com</p>
             </div>
           </div>
-          <div className="p-4 rounded-xl border border-white/10 bg-white/5 flex items-center gap-3">
+          <div className="p-4 rounded-xl border border-border bg-card flex items-center gap-3">
             <MessageSquare className="w-5 h-5 text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-white">Support</p>
-              <p className="text-xs text-white/40">Usually responds within 24h</p>
+              <p className="text-sm font-medium text-foreground">Support</p>
+              <p className="text-xs text-muted-foreground">Usually responds within 24h</p>
             </div>
           </div>
         </motion.div>

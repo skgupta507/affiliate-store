@@ -104,7 +104,7 @@ export function AdminProducts() {
           <div className="flex items-center justify-between">
             <CardTitle>All Products ({products.length})</CardTitle>
             <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -116,7 +116,7 @@ export function AdminProducts() {
         </CardHeader>
         <CardContent>
           {filtered.length === 0 ? (
-            <p className="text-center text-white/40 py-12">
+            <p className="text-center text-muted-foreground py-12">
               {products.length === 0
                 ? "No products yet. Add your first product!"
                 : "No products match your search."}
@@ -127,10 +127,10 @@ export function AdminProducts() {
                 <motion.div
                   key={product.id}
                   layout
-                  className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-all"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-secondary border border-white/5 hover:border-border transition-all"
                 >
                   {/* Image */}
-                  <div className="w-14 h-14 rounded-lg bg-white/5 overflow-hidden shrink-0">
+                  <div className="w-14 h-14 rounded-lg bg-secondary overflow-hidden shrink-0">
                     {product.image ? (
                       <img
                         src={product.image}
@@ -146,7 +146,7 @@ export function AdminProducts() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
+                    <p className="text-sm font-medium text-foreground truncate">
                       {product.title}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
@@ -170,11 +170,11 @@ export function AdminProducts() {
                   {/* Price */}
                   <div className="hidden sm:block text-right">
                     {product.price && (
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-foreground">
                         {formatPrice(product.price, product.currency)}
                       </p>
                     )}
-                    <p className="text-xs text-white/40">{product.clicks} clicks</p>
+                    <p className="text-xs text-muted-foreground">{product.clicks} clicks</p>
                   </div>
 
                   {/* Actions */}
@@ -183,7 +183,7 @@ export function AdminProducts() {
                       variant="ghost"
                       size="icon"
                       onClick={() => openEditDialog(product)}
-                      className="h-8 w-8 text-white/30 hover:text-blue-400"
+                      className="h-8 w-8 text-muted-foreground/60 hover:text-blue-400"
                       title="Edit product"
                     >
                       <Edit className="w-4 h-4" />
@@ -192,7 +192,7 @@ export function AdminProducts() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleToggleFeatured(product)}
-                      className={`h-8 w-8 ${product.isFeatured ? "text-purple-400" : "text-white/30"}`}
+                      className={`h-8 w-8 ${product.isFeatured ? "text-primary" : "text-muted-foreground/60"}`}
                       title="Toggle featured"
                     >
                       <Star className="w-4 h-4" />
@@ -201,7 +201,7 @@ export function AdminProducts() {
                       variant="ghost"
                       size="icon"
                       onClick={() => window.open(product.affiliateUrl, "_blank")}
-                      className="h-8 w-8 text-white/30 hover:text-white"
+                      className="h-8 w-8 text-muted-foreground/60 hover:text-foreground"
                       title="Open link"
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -210,7 +210,7 @@ export function AdminProducts() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(product.id, product.title)}
-                      className="h-8 w-8 text-white/30 hover:text-red-400"
+                      className="h-8 w-8 text-muted-foreground/60 hover:text-red-400"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -235,7 +235,7 @@ export function AdminProducts() {
 
           <div className="space-y-4 mt-4">
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-1.5">Title *</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Title *</label>
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
@@ -244,17 +244,17 @@ export function AdminProducts() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-1.5">Description</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Description</label>
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 rows={3}
-                className="flex w-full rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all resize-none"
+                className="flex w-full rounded-xl border border-border bg-secondary backdrop-blur-sm px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all resize-none"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-1.5">Image URL</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Image URL</label>
               <div className="flex gap-2">
                 <Input
                   value={editImage}
@@ -263,7 +263,7 @@ export function AdminProducts() {
                   className="flex-1"
                 />
                 {editImage && (
-                  <div className="w-10 h-10 rounded-lg border border-white/10 overflow-hidden shrink-0">
+                  <div className="w-10 h-10 rounded-lg border border-border overflow-hidden shrink-0">
                     <img src={editImage} alt="" className="w-full h-full object-cover" />
                   </div>
                 )}
@@ -271,7 +271,7 @@ export function AdminProducts() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-1.5">Affiliate URL</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Affiliate URL</label>
               <Input
                 value={editUrl}
                 onChange={(e) => setEditUrl(e.target.value)}
@@ -281,11 +281,11 @@ export function AdminProducts() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Category</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Category</label>
                 <select
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value)}
-                  className="flex h-10 w-full rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                  className="flex h-10 w-full rounded-xl border border-border bg-secondary backdrop-blur-sm px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
                 >
                   <option value="">Select category</option>
                   {categories.map((cat) => (
@@ -295,7 +295,7 @@ export function AdminProducts() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Tags (comma separated)</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Tags (comma separated)</label>
                 <Input
                   value={editTags}
                   onChange={(e) => setEditTags(e.target.value)}
@@ -306,7 +306,7 @@ export function AdminProducts() {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Price (₹)</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Price (₹)</label>
                 <Input
                   type="number"
                   value={editPrice}
@@ -315,7 +315,7 @@ export function AdminProducts() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Original Price (₹)</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Original Price (₹)</label>
                 <Input
                   type="number"
                   value={editOriginalPrice}
@@ -324,7 +324,7 @@ export function AdminProducts() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Rating (1-5)</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Rating (1-5)</label>
                 <Input
                   type="number"
                   min="1"
@@ -343,18 +343,18 @@ export function AdminProducts() {
                   type="checkbox"
                   checked={editFeatured}
                   onChange={(e) => setEditFeatured(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500"
+                  className="w-4 h-4 rounded border-border bg-secondary text-purple-500 focus:ring-purple-500"
                 />
-                <span className="text-sm text-white/70">Featured</span>
+                <span className="text-sm text-muted-foreground">Featured</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={editTrending}
                   onChange={(e) => setEditTrending(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500"
+                  className="w-4 h-4 rounded border-border bg-secondary text-purple-500 focus:ring-purple-500"
                 />
-                <span className="text-sm text-white/70">Trending</span>
+                <span className="text-sm text-muted-foreground">Trending</span>
               </label>
             </div>
 

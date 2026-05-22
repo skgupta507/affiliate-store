@@ -268,7 +268,7 @@ export const useStore = create<AppState>()(
         }),
 
       // Theme
-      theme: "dark",
+      theme: "light",
       toggleTheme: () =>
         set((state) => ({
           theme: state.theme === "dark" ? "light" : "dark",

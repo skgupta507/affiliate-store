@@ -135,13 +135,13 @@ export default function UserLoginPage() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         className="w-full max-w-md"
       >
-        <div className="p-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl">
+        <div className="p-8 rounded-2xl border border-border bg-card backdrop-blur-xl shadow-2xl">
           <div className="text-center mb-8">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mx-auto mb-4">
-              <LogIn className="w-7 h-7 text-white" />
+              <LogIn className="w-7 h-7 text-foreground" />
             </div>
-            <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
-            <p className="text-sm text-white/50 mt-2">
+            <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
+            <p className="text-sm text-muted-foreground mt-2">
               Sign in to access your wishlist and profile
             </p>
           </div>
@@ -165,10 +165,10 @@ export default function UserLoginPage() {
 
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
+              <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-2 bg-gray-900 text-white/40">or sign in with email</span>
+              <span className="px-2 bg-gray-900 text-muted-foreground">or sign in with email</span>
             </div>
           </div>
 
@@ -196,7 +196,7 @@ export default function UserLoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -208,9 +208,9 @@ export default function UserLoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-white/40 mt-6">
+          <p className="text-center text-sm text-muted-foreground mt-6">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-purple-400 hover:text-purple-300">
+            <Link href="/signup" className="text-primary hover:text-primary">
               Sign up
             </Link>
           </p>

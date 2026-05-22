@@ -109,6 +109,16 @@ export default function OrdersPage() {
                         Cancel
                       </Button>
                     )}
+                    {order.trackingNumber && order.status !== "delivered" && order.status !== "cancelled" && (
+                      <a
+                        href={`https://shiprocket.co/tracking/${order.trackingNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                      >
+                        <Truck className="w-3 h-3" /> Track Order
+                      </a>
+                    )}
                     {order.estimatedDelivery && order.status !== "delivered" && order.status !== "cancelled" && (
                       <p className="text-[10px] text-muted-foreground">
                         Est. delivery: {new Date(order.estimatedDelivery).toLocaleDateString()}

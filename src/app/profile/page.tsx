@@ -131,16 +131,16 @@ export default function ProfilePage() {
                   className="w-16 h-16 rounded-full object-cover border-2 border-purple-500/50"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-foreground text-xl font-bold">
                   {(currentUser?.displayName || currentUser?.email || "U")[0].toUpperCase()}
                 </div>
               )}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">
+              <h1 className="text-xl font-bold text-foreground">
                 {currentUser?.displayName || "User"}
               </h1>
-              <p className="text-sm text-white/50">{currentUser?.email}</p>
+              <p className="text-sm text-muted-foreground">{currentUser?.email}</p>
               {currentUser?.provider && (
                 <Badge variant="secondary" className="mt-1 text-[10px]">
                   {currentUser.provider === "google" ? "Google Account" : "Email Account"}
@@ -148,21 +148,21 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
-          <Button variant="ghost" onClick={handleLogout} className="gap-2 text-white/60">
+          <Button variant="ghost" onClick={handleLogout} className="gap-2 text-muted-foreground">
             <LogOut className="w-4 h-4" /> Logout
           </Button>
         </motion.div>
 
         {/* Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 p-1 rounded-2xl bg-white/5 border border-white/10">
+        <div className="flex flex-wrap gap-2 mb-8 p-1 rounded-2xl bg-card border border-border">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 activeTab === tab.id
-                  ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg"
-                  : "text-white/60 hover:text-white hover:bg-white/5"
+                  ? "bg-gradient-to-r from-purple-600 to-blue-600 text-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card"
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -180,9 +180,9 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Display Name */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-card">
                   <div>
-                    <p className="text-sm font-medium text-white">Display Name</p>
+                    <p className="text-sm font-medium text-foreground">Display Name</p>
                     {editingName ? (
                       <div className="flex items-center gap-2 mt-2">
                         <Input
@@ -199,7 +199,7 @@ export default function ProfilePage() {
                         </Button>
                       </div>
                     ) : (
-                      <p className="text-xs text-white/40 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {currentUser?.displayName || "Not set"}
                       </p>
                     )}
@@ -212,12 +212,12 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Profile Photo */}
-                <div className="p-4 rounded-xl bg-white/5">
-                  <p className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+                <div className="p-4 rounded-xl bg-card">
+                  <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <Camera className="w-4 h-4" /> Profile Photo
                   </p>
                   {currentUser?.provider === "google" && currentUser.photoURL && (
-                    <p className="text-xs text-white/40 mb-2">
+                    <p className="text-xs text-muted-foreground mb-2">
                       Currently using your Google profile photo.
                     </p>
                   )}
@@ -235,24 +235,24 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Account Info */}
-                <div className="p-4 rounded-xl bg-white/5">
-                  <p className="text-sm font-medium text-white mb-3">Account Info</p>
+                <div className="p-4 rounded-xl bg-card">
+                  <p className="text-sm font-medium text-foreground mb-3">Account Info</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-white/50">Email</span>
-                      <span className="text-white">{currentUser?.email}</span>
+                      <span className="text-muted-foreground">Email</span>
+                      <span className="text-foreground">{currentUser?.email}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-white/50">Provider</span>
-                      <span className="text-white capitalize">{currentUser?.provider || "local"}</span>
+                      <span className="text-muted-foreground">Provider</span>
+                      <span className="text-foreground capitalize">{currentUser?.provider || "local"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-white/50">Wishlist Items</span>
-                      <span className="text-white">{wishlist.length}</span>
+                      <span className="text-muted-foreground">Wishlist Items</span>
+                      <span className="text-foreground">{wishlist.length}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-white/50">Watchlists</span>
-                      <span className="text-white">{watchlists.length}</span>
+                      <span className="text-muted-foreground">Watchlists</span>
+                      <span className="text-foreground">{watchlists.length}</span>
                     </div>
                   </div>
                 </div>
@@ -265,7 +265,7 @@ export default function ProfilePage() {
         {activeTab === "wishlist" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-lg font-semibold text-foreground">
                 My Wishlist ({wishlistProducts.length})
               </h2>
             </div>
@@ -275,7 +275,7 @@ export default function ProfilePage() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <Heart className="w-10 h-10 text-white/20 mx-auto mb-3" />
-                  <p className="text-white/50">Your wishlist is empty.</p>
+                  <p className="text-muted-foreground">Your wishlist is empty.</p>
                   <Link href="/products">
                     <Button variant="outline" className="mt-4">Browse Products</Button>
                   </Link>
@@ -311,7 +311,7 @@ export default function ProfilePage() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <List className="w-10 h-10 text-white/20 mx-auto mb-3" />
-                  <p className="text-white/50">No watchlists yet. Create one above!</p>
+                  <p className="text-muted-foreground">No watchlists yet. Create one above!</p>
                 </CardContent>
               </Card>
             ) : (
@@ -339,7 +339,7 @@ export default function ProfilePage() {
                           </div>
                         ) : (
                           <CardTitle className="text-base flex items-center gap-2">
-                            <Package className="w-4 h-4 text-purple-400" />
+                            <Package className="w-4 h-4 text-primary" />
                             {wl.name}
                             <Badge variant="secondary" className="text-[10px]">
                               {wl.productIds.length} items
@@ -350,7 +350,7 @@ export default function ProfilePage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-white/30 hover:text-white"
+                            className="h-8 w-8 text-white/30 hover:text-foreground"
                             onClick={() => { setRenamingId(wl.id); setRenameValue(wl.name); }}
                           >
                             <Edit2 className="w-3 h-3" />
@@ -375,13 +375,13 @@ export default function ProfilePage() {
                       {wlProducts.length > 0 ? (
                         <div className="space-y-2">
                           {wlProducts.map((p) => (
-                            <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                            <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl bg-card">
                               {p.image && (
                                 <img src={p.image} alt="" className="w-10 h-10 rounded-lg object-cover" />
                               )}
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-white truncate">{p.title}</p>
-                                <p className="text-xs text-white/40">{p.platform}</p>
+                                <p className="text-sm text-foreground truncate">{p.title}</p>
+                                <p className="text-xs text-muted-foreground">{p.platform}</p>
                               </div>
                               <Button
                                 variant="ghost"
@@ -398,7 +398,7 @@ export default function ProfilePage() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-white/40 text-center py-4">
+                        <p className="text-sm text-muted-foreground text-center py-4">
                           No products in this watchlist yet.
                         </p>
                       )}
@@ -413,7 +413,7 @@ export default function ProfilePage() {
         {/* History Tab */}
         {activeTab === "history" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <h2 className="text-lg font-semibold text-white mb-6">
+            <h2 className="text-lg font-semibold text-foreground mb-6">
               Recently Viewed ({recentProducts.length})
             </h2>
             {recentProducts.length > 0 ? (
@@ -422,7 +422,7 @@ export default function ProfilePage() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <Clock className="w-10 h-10 text-white/20 mx-auto mb-3" />
-                  <p className="text-white/50">No recently viewed products.</p>
+                  <p className="text-muted-foreground">No recently viewed products.</p>
                   <Link href="/products">
                     <Button variant="outline" className="mt-4">Browse Products</Button>
                   </Link>
