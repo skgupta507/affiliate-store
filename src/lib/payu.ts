@@ -1,16 +1,17 @@
 "use client";
 
 /**
- * PayU Payment Integration - Client Side
+ * PayU Hosted Checkout Integration
  * 
  * Flow:
- * 1. Call our API to generate the payment hash
- * 2. Submit a form to PayU's payment page
- * 3. PayU redirects back to our success/failure URL
+ * 1. Call /api/payu/generate-hash to get the hash + payment URL
+ * 2. Create a hidden form with all required params
+ * 3. Submit the form — browser redirects to PayU payment page
+ * 4. After payment, PayU POSTs to surl (success) or furl (failure)
  */
 
 export interface PayUOptions {
-  amount: number; // in rupees
+  amount: number;
   productInfo: string;
   customerName: string;
   customerEmail: string;
@@ -21,7 +22,7 @@ export interface PayUOptions {
 export async function initiatePayUPayment(options: PayUOptions): Promise<void> {
   const { amount, productInfo, customerName, customerEmail, customerPhone, orderId } = options;
 
-  // Get hash from our API
+  // Step 1: Get hash from our backend
   const res = await fetch("/api/payu/generate-hash", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -36,15 +37,22 @@ export async function initiatePayUPayment(options: PayUOptions): Promise<void> {
   });
 
   if (!res.ok) {
-    throw new Error("Failed to generate payment hash");
+    const err = await res.json();
+    throw new Error(err.error || "Failed to generate payment hash");
   }
 
   const { hash, key, action } = await res.json();
 
-  // Create and submit form to PayU
+  // Step 2: Create form and submit to PayU
+  // Remove any existing PayU form
+  const existingForm = document.getElementById("payu-payment-form");
+  if (existingForm) existingForm.remove();
+
   const form = document.createElement("form");
+  form.id = "payu-payment-form";
   form.method = "POST";
   form.action = action;
+  form.style.display = "none";
 
   const fields: Record<string, string> = {
     key,
@@ -57,6 +65,19 @@ export async function initiatePayUPayment(options: PayUOptions): Promise<void> {
     surl: `${window.location.origin}/api/payu/success`,
     furl: `${window.location.origin}/api/payu/failure`,
     hash,
+    // Optional but recommended
+    lastname: "",
+    address1: "",
+    address2: "",
+    city: "",
+    state: "",
+    country: "India",
+    zipcode: "",
+    udf1: "",
+    udf2: "",
+    udf3: "",
+    udf4: "",
+    udf5: "",
   };
 
   for (const [name, value] of Object.entries(fields)) {
@@ -67,6 +88,7 @@ export async function initiatePayUPayment(options: PayUOptions): Promise<void> {
     form.appendChild(input);
   }
 
+  // Step 3: Append to body and submit
   document.body.appendChild(form);
   form.submit();
 }
