@@ -138,6 +138,24 @@ export default function CheckoutPage() {
         updateUserProfile(profileUpdates);
       }
 
+      // Send order confirmation email (fire and forget)
+      if (currentUser?.email) {
+        fetch("/api/send-order-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerEmail: currentUser.email,
+            customerName: selectedAddress.fullName || currentUser.displayName || "Customer",
+            orderId: order.id,
+            items: order.items,
+            totalAmount: order.totalAmount,
+            paymentMethod: order.paymentMethod,
+            shippingAddress: order.shippingAddress,
+            orderDate: order.createdAt,
+          }),
+        }).catch((err) => console.error("Failed to send order email:", err));
+      }
+
       setOrderPlaced(true);
     };
 

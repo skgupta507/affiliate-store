@@ -6,7 +6,7 @@ import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, getRelativeTime } from "@/lib/utils";
-import { Package, ShoppingBag, Truck, CheckCircle, XCircle, Clock, ArrowRight } from "lucide-react";
+import { Package, ShoppingBag, Truck, CheckCircle, XCircle, Clock, ArrowRight, FileText } from "lucide-react";
 
 const statusConfig: Record<string, { color: string; icon: typeof Package; label: string }> = {
   pending: { color: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20", icon: Clock, label: "Pending" },
@@ -19,7 +19,71 @@ const statusConfig: Record<string, { color: string; icon: typeof Package; label:
 };
 
 export default function OrdersPage() {
-  const { orders, cancelOrder } = useStore();
+  const { orders, cancelOrder, currentUser } = useStore();
+
+  const handleViewInvoice = (order: typeof orders[0]) => {
+    const invoiceWindow = window.open("", "_blank");
+    if (!invoiceWindow) return;
+
+    const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
+      year: "numeric", month: "long", day: "numeric",
+    });
+
+    const itemRows = order.items.map((item) => `
+      <tr>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px;">${item.title}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; text-align: center;">${item.quantity}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; text-align: right;">₹${item.price.toLocaleString("en-IN")}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; text-align: right;">₹${(item.price * item.quantity).toLocaleString("en-IN")}</td>
+      </tr>
+    `).join("");
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice #${order.id.slice(0, 8).toUpperCase()}</title></head>
+    <body style="margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;">
+      <div style="max-width:700px;margin:0 auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #c2410c;">
+          <div>
+            <h1 style="margin:0;font-size:24px;color:#c2410c;">TheIdeaDecorator</h1>
+            <p style="margin:4px 0 0;font-size:12px;color:#666;">Tax Invoice</p>
+          </div>
+          <div style="text-align:right;">
+            <p style="margin:0;font-size:14px;font-weight:600;">Invoice #${order.id.slice(0, 8).toUpperCase()}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#666;">${orderDate}</p>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;">
+          <div>
+            <p style="font-size:11px;color:#666;margin:0 0 6px;font-weight:600;">BILL TO:</p>
+            <p style="font-size:14px;margin:0;line-height:1.5;">${order.shippingAddress.fullName}<br>${order.shippingAddress.addressLine1}<br>${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.pincode}<br>Phone: ${order.shippingAddress.phone}</p>
+          </div>
+          <div style="text-align:right;">
+            <p style="font-size:11px;color:#666;margin:0 0 6px;font-weight:600;">PAYMENT:</p>
+            <p style="font-size:14px;margin:0;text-transform:uppercase;">${order.paymentMethod}</p>
+            <p style="font-size:12px;color:#666;margin:4px 0 0;">Status: ${order.paymentStatus}</p>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+          <thead><tr style="background:#f9fafb;">
+            <th style="padding:10px 12px;text-align:left;font-size:12px;color:#666;">Item</th>
+            <th style="padding:10px 12px;text-align:center;font-size:12px;color:#666;">Qty</th>
+            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#666;">Price</th>
+            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#666;">Total</th>
+          </tr></thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+        <div style="text-align:right;border-top:2px solid #c2410c;padding-top:15px;">
+          <p style="font-size:20px;color:#c2410c;margin:0;font-weight:700;">Total: ₹${order.totalAmount.toLocaleString("en-IN")}</p>
+        </div>
+        <div style="margin-top:40px;text-align:center;color:#999;font-size:11px;">
+          <p>Thank you for shopping with TheIdeaDecorator!</p>
+          <button onclick="window.print()" style="margin-top:10px;padding:8px 20px;background:#c2410c;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">Print Invoice</button>
+        </div>
+      </div>
+    </body></html>`;
+
+    invoiceWindow.document.write(html);
+    invoiceWindow.document.close();
+  };
 
   if (orders.length === 0) {
     return (
@@ -119,6 +183,12 @@ export default function OrdersPage() {
                         <Truck className="w-3 h-3" /> Track Order
                       </a>
                     )}
+                    <button
+                      onClick={() => handleViewInvoice(order)}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-secondary text-foreground text-xs font-medium border border-border hover:bg-accent transition-colors"
+                    >
+                      <FileText className="w-3 h-3" /> Invoice
+                    </button>
                     {order.estimatedDelivery && order.status !== "delivered" && order.status !== "cancelled" && (
                       <p className="text-[10px] text-muted-foreground">
                         Est. delivery: {new Date(order.estimatedDelivery).toLocaleDateString()}
