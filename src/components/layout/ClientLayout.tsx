@@ -5,6 +5,7 @@ import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { ToastContainer } from "./ToastContainer";
 import { FirestoreSync } from "@/components/FirestoreSync";
+import { UserDataSync } from "@/components/UserDataSync";
 import { useEffect } from "react";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={theme === "dark" ? "dark" : ""}>
       <FirestoreSync />
+      <UserDataSync />
       <Navbar />
       <main className="pt-16 min-h-screen">{children}</main>
       <Footer />

@@ -117,3 +117,61 @@ export function subscribeToCategories(callback: (categories: Category[]) => void
     supabase!.removeChannel(channel);
   };
 }
+
+
+// --- User Data (cross-device sync for cart, addresses, orders, wishlist) ---
+
+export interface UserSyncData {
+  cart: unknown[];
+  addresses: unknown[];
+  orders: unknown[];
+  wishlist: string[];
+  watchlists: unknown[];
+  recently_viewed: string[];
+}
+
+export async function getUserData(userId: string): Promise<UserSyncData | null> {
+  if (!supabase || !userId) return null;
+  const { data, error } = await supabase
+    .from("user_data")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+  if (error) {
+    if (error.code === "PGRST116") return null; // Not found
+    console.error("Supabase getUserData error:", error.message);
+    return null;
+  }
+  return data as UserSyncData;
+}
+
+export async function saveUserData(userId: string, userData: Partial<UserSyncData>): Promise<void> {
+  if (!supabase || !userId) return;
+  const { error } = await supabase
+    .from("user_data")
+    .upsert(
+      { user_id: userId, ...userData, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  if (error) console.error("Supabase saveUserData error:", error.message);
+}
+
+export function subscribeToUserData(userId: string, callback: (data: UserSyncData) => void): () => void {
+  if (!supabase || !userId) return () => {};
+
+  const channel = supabase
+    .channel(`user-data-${userId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "user_data", filter: `user_id=eq.${userId}` },
+      async () => {
+        const data = await getUserData(userId);
+        if (data) callback(data);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase!.removeChannel(channel);
+  };
+}

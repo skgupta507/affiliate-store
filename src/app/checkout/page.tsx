@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatPrice, generateId } from "@/lib/utils";
 import { initiateRazorpayPayment } from "@/lib/razorpay";
+import { initiatePayUPayment } from "@/lib/payu";
 import { Order, Address } from "@/types";
 import {
   ArrowLeft,
@@ -27,6 +28,7 @@ export default function CheckoutPage() {
   );
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState("");
 
   // Login guard — redirect to login if not authenticated
   if (!isUserLoggedIn) {
@@ -156,23 +158,38 @@ export default function CheckoutPage() {
         }).catch((err) => console.error("Failed to send order email:", err));
       }
 
+      setPlacedOrderId(order.id);
       setOrderPlaced(true);
     };
 
     if (paymentMethod === "razorpay") {
       await initiateRazorpayPayment({
-        amount: total, // in rupees — library converts to paise internally
+        amount: total,
         description: `Order - ${cartItems.length} items`,
         customerName: selectedAddress.fullName,
         customerPhone: selectedAddress.phone,
+        customerEmail: currentUser?.email,
         onSuccess: () => {
           createOrder();
         },
         onFailure: (error) => {
           console.error("Payment failed:", error);
-          // Optionally show a toast/alert to user
         },
       });
+    } else if (paymentMethod === "payu") {
+      createOrder();
+      try {
+        await initiatePayUPayment({
+          amount: total,
+          productInfo: `Order - ${cartItems.length} items`,
+          customerName: selectedAddress.fullName,
+          customerEmail: currentUser?.email || "",
+          customerPhone: selectedAddress.phone,
+          orderId: Date.now().toString(),
+        });
+      } catch (err) {
+        console.error("PayU payment failed:", err);
+      }
     } else {
       createOrder();
     }
@@ -186,16 +203,27 @@ export default function CheckoutPage() {
           animate={{ opacity: 1, scale: 1 }}
         >
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-            <CheckCircle className="w-12 h-12 text-green-400" />
+            <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-3">Order Placed!</h1>
-          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-            Your order has been confirmed. You&apos;ll receive updates on your delivery status.
+          <h1 className="text-3xl font-bold text-foreground mb-2">Order Placed!</h1>
+          <p className="text-sm text-muted-foreground mb-1">
+            Order ID: <span className="font-mono font-bold text-foreground">#{placedOrderId.slice(0, 8).toUpperCase()}</span>
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <p className="text-sm text-muted-foreground mb-2">
+            Payment: <span className="font-semibold uppercase">{paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod}</span>
+          </p>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto text-sm">
+            {paymentMethod === "cod"
+              ? "Your order is confirmed. Pay when you receive your delivery."
+              : "Payment successful! Your order is confirmed."}
+            {currentUser?.email && (
+              <span className="block mt-1 text-xs">Confirmation email sent to {currentUser.email}</span>
+            )}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/orders">
               <Button size="lg" className="gap-2">
-                <Package className="w-4 h-4" /> View Orders
+                <Package className="w-4 h-4" /> View Orders & Invoice
               </Button>
             </Link>
             <Link href="/products">
@@ -336,6 +364,7 @@ export default function CheckoutPage() {
                 <div className="space-y-3">
                   {[
                     { id: "razorpay", label: "Pay Online (Razorpay)", desc: "UPI, Cards, Net Banking, Wallets" },
+                    { id: "payu", label: "Pay Online (PayU)", desc: "UPI, Cards, Net Banking, EMI" },
                     { id: "cod", label: "Cash on Delivery", desc: "Pay when you receive" },
                   ].map((method) => (
                     <button
