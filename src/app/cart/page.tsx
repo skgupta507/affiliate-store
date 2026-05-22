@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 export default function CartPage() {
-  const { cart, products, removeFromCart, updateCartQuantity, clearCart } = useStore();
+  const { cart, products, removeFromCart, updateCartQuantity, clearCart, isUserLoggedIn } = useStore();
 
   const cartItems = cart.map((item) => ({
     ...item,
@@ -197,9 +197,9 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <Link href="/checkout" className="block">
+              <Link href={isUserLoggedIn ? "/checkout" : "/user-login"} className="block">
                 <Button size="lg" className="w-full gap-2">
-                  Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                  {isUserLoggedIn ? "Proceed to Checkout" : "Login to Checkout"} <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
 

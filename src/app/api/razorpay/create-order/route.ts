@@ -1,52 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
+import Razorpay from "razorpay";
+
+const razorpay = new Razorpay({
+  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+});
 
 /**
  * POST /api/razorpay/create-order
- * Creates a Razorpay order for payment
- * 
- * Body: { amount: number (in paise), receipt: string }
+ * Creates a Razorpay order for payment.
+ * Body: { amount: number (in paise, min 100), receipt?: string }
  */
 export async function POST(request: NextRequest) {
   try {
-    const { amount, receipt } = await request.json();
+    const body = await request.json();
+    const { amount, receipt } = body;
 
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
-
-    if (!keyId || !keySecret) {
+    // Validate amount
+    if (!amount || typeof amount !== "number" || amount < 100) {
       return NextResponse.json(
-        { error: "Razorpay not configured" },
-        { status: 500 }
+        { error: "Amount must be at least 100 paise (₹1)" },
+        { status: 400 }
       );
     }
 
-    const response = await fetch("https://api.razorpay.com/v1/orders", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
-      },
-      body: JSON.stringify({
-        amount,
-        currency: "INR",
-        receipt: receipt || `order_${Date.now()}`,
-      }),
+    const order = await razorpay.orders.create({
+      amount,
+      currency: "INR",
+      receipt: receipt || `receipt_${Date.now()}`,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      return NextResponse.json(
-        { error: `Razorpay error: ${error}` },
-        { status: response.status }
-      );
-    }
-
-    const order = await response.json();
-    return NextResponse.json(order);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to create order" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      order_id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    });
+  } catch (err: unknown) {
+    console.error("Razorpay create-order error:", err);
+    const message = err instanceof Error ? err.message : "Failed to create order";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

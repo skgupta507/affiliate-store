@@ -20,13 +20,38 @@ import {
 } from "lucide-react";
 
 export default function CheckoutPage() {
-  const { cart, products, addresses, addAddress, addOrder, clearCart, isUserLoggedIn } = useStore();
+  const { cart, products, addresses, addAddress, addOrder, clearCart, isUserLoggedIn, currentUser, updateUserProfile } = useStore();
   const [step, setStep] = useState<"address" | "payment" | "confirm">("address");
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(
     addresses.find((a) => a.isDefault) || addresses[0] || null
   );
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [orderPlaced, setOrderPlaced] = useState(false);
+
+  // Login guard — redirect to login if not authenticated
+  if (!isUserLoggedIn) {
+    return (
+      <div className="px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary border border-border flex items-center justify-center">
+            <Shield className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <h1 className="text-xl font-bold text-foreground mb-2">Login Required</h1>
+          <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
+            Please log in or create an account to proceed with checkout.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/user-login">
+              <Button>Log In</Button>
+            </Link>
+            <Link href="/signup">
+              <Button variant="outline">Sign Up</Button>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   // Address form
   const [fullName, setFullName] = useState("");
@@ -100,13 +125,25 @@ export default function CheckoutPage() {
 
       addOrder(order);
       clearCart();
+
+      // Update user profile with order details
+      const profileUpdates: Record<string, unknown> = {};
+      if (!currentUser?.displayName && selectedAddress.fullName) {
+        profileUpdates.displayName = selectedAddress.fullName;
+      }
+      if (!currentUser?.phone && selectedAddress.phone) {
+        profileUpdates.phone = selectedAddress.phone;
+      }
+      if (Object.keys(profileUpdates).length > 0) {
+        updateUserProfile(profileUpdates);
+      }
+
       setOrderPlaced(true);
     };
 
     if (paymentMethod === "razorpay") {
       await initiateRazorpayPayment({
-        amount: total * 100, // Convert to paise
-        name: "TheIdeaDecorator",
+        amount: total, // in rupees — library converts to paise internally
         description: `Order - ${cartItems.length} items`,
         customerName: selectedAddress.fullName,
         customerPhone: selectedAddress.phone,
@@ -115,6 +152,7 @@ export default function CheckoutPage() {
         },
         onFailure: (error) => {
           console.error("Payment failed:", error);
+          // Optionally show a toast/alert to user
         },
       });
     } else {
