@@ -200,7 +200,7 @@ export function AdminAddProduct() {
               onClick={() => setIsAffiliate(true)}
               className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 isAffiliate
-                  ? "bg-gradient-to-r from-purple-600 to-blue-600 text-foreground"
+                  ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -210,7 +210,7 @@ export function AdminAddProduct() {
               onClick={() => setIsAffiliate(false)}
               className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 !isAffiliate
-                  ? "bg-gradient-to-r from-purple-600 to-blue-600 text-foreground"
+                  ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -285,7 +285,7 @@ export function AdminAddProduct() {
 
             <div className="flex gap-2">
               <label className="flex-1 cursor-pointer">
-                <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border hover:border-purple-500/50 transition-colors text-muted-foreground hover:text-muted-foreground">
+                <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border hover:border-primary/50 transition-colors text-muted-foreground hover:text-muted-foreground">
                   <Upload className="w-4 h-4" />
                   <span className="text-sm">Upload Images</span>
                 </div>
@@ -331,7 +331,7 @@ export function AdminAddProduct() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Product description..."
                   rows={3}
-                  className="flex w-full rounded-xl border border-border bg-card backdrop-blur-sm px-4 py-3 text-sm text-foreground placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-ring/50 transition-all resize-none"
+                  className="flex w-full rounded-xl border border-border bg-card backdrop-blur-sm px-4 py-3 text-sm text-foreground placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
                 />
               </div>
 
@@ -342,7 +342,7 @@ export function AdminAddProduct() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="flex h-10 w-full rounded-xl border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 transition-all appearance-none"
+                  className="flex h-10 w-full rounded-xl border border-border bg-secondary px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none"
                   style={{ colorScheme: "dark" }}
                 >
                   <option value="" className="bg-secondary text-foreground">Select category</option>

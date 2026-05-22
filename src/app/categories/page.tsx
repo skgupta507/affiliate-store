@@ -4,37 +4,64 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
 import {
-  Laptop,
-  Shirt,
   Home,
+  Bed,
+  ChefHat,
+  Droplets,
+  Frame,
+  Lamp,
+  Armchair,
+  Layers,
+  Blinds,
+  Heart,
+  Flower2,
+  Flame,
+  Circle,
+  Clock,
+  Archive,
+  TreePine,
+  Shirt,
+  Coffee,
   BookOpen,
-  Dumbbell,
-  Sparkles,
-  Gamepad2,
-  Car,
+  Laptop,
   ArrowRight,
+  Sparkles,
 } from "lucide-react";
 
 const categoryIcons: Record<string, React.ReactNode> = {
-  Electronics: <Laptop className="w-8 h-8" />,
-  Fashion: <Shirt className="w-8 h-8" />,
-  "Home & Kitchen": <Home className="w-8 h-8" />,
-  Books: <BookOpen className="w-8 h-8" />,
-  Sports: <Dumbbell className="w-8 h-8" />,
-  Beauty: <Sparkles className="w-8 h-8" />,
-  Toys: <Gamepad2 className="w-8 h-8" />,
-  Automotive: <Car className="w-8 h-8" />,
+  "Living Room": <Home className="w-6 h-6" />,
+  "Bedroom": <Bed className="w-6 h-6" />,
+  "Kitchen & Dining": <ChefHat className="w-6 h-6" />,
+  "Bathroom": <Droplets className="w-6 h-6" />,
+  "Wall Art & Decor": <Frame className="w-6 h-6" />,
+  "Lighting": <Lamp className="w-6 h-6" />,
+  "Furniture": <Armchair className="w-6 h-6" />,
+  "Rugs & Carpets": <Layers className="w-6 h-6" />,
+  "Curtains & Blinds": <Blinds className="w-6 h-6" />,
+  "Cushions & Throws": <Heart className="w-6 h-6" />,
+  "Vases & Planters": <Flower2 className="w-6 h-6" />,
+  "Candles & Fragrances": <Flame className="w-6 h-6" />,
+  "Mirrors": <Circle className="w-6 h-6" />,
+  "Clocks": <Clock className="w-6 h-6" />,
+  "Storage & Organization": <Archive className="w-6 h-6" />,
+  "Outdoor & Garden": <TreePine className="w-6 h-6" />,
+  "Bedding & Linen": <Shirt className="w-6 h-6" />,
+  "Table Decor": <Coffee className="w-6 h-6" />,
+  "Shelves & Racks": <BookOpen className="w-6 h-6" />,
+  "Electronics": <Laptop className="w-6 h-6" />,
 };
 
-const categoryGradients = [
-  "from-purple-500/20 to-blue-500/20",
-  "from-pink-500/20 to-rose-500/20",
-  "from-green-500/20 to-emerald-500/20",
-  "from-yellow-500/20 to-orange-500/20",
-  "from-blue-500/20 to-cyan-500/20",
-  "from-violet-500/20 to-purple-500/20",
-  "from-red-500/20 to-pink-500/20",
-  "from-teal-500/20 to-green-500/20",
+const categoryColors = [
+  "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
+  "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400",
+  "bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400",
+  "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
+  "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+  "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400",
+  "bg-teal-50 text-teal-600 dark:bg-teal-500/10 dark:text-teal-400",
+  "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
+  "bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400",
 ];
 
 export default function CategoriesPage() {
@@ -46,17 +73,17 @@ export default function CategoriesPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-12 text-center"
+          className="mb-10"
         >
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
             Browse Categories
           </h1>
-          <p className="text-muted-foreground max-w-lg mx-auto">
-            Explore products organized by category. Find exactly what you&apos;re looking for.
+          <p className="text-muted-foreground text-sm">
+            Explore our curated interior design and home decor collections.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
           {categories.map((category, index) => {
             const productCount = products.filter(
               (p) => p.category === category.name
@@ -65,28 +92,24 @@ export default function CategoriesPage() {
             return (
               <motion.div
                 key={category.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.03 }}
               >
                 <Link href={`/products?category=${category.name}`}>
-                  <div className="group relative p-6 rounded-2xl border border-border bg-card backdrop-blur-xl hover:bg-secondary transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/5 cursor-pointer">
+                  <div className="group p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer">
                     <div
-                      className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${
-                        categoryGradients[index % categoryGradients.length]
-                      } flex items-center justify-center mb-4 text-white/70 group-hover:text-foreground transition-colors`}
+                      className={`w-10 h-10 rounded-lg ${categoryColors[index % categoryColors.length]} flex items-center justify-center mb-3`}
                     >
-                      {categoryIcons[category.name] || <Sparkles className="w-8 h-8" />}
+                      {categoryIcons[category.name] || <Sparkles className="w-5 h-5" />}
                     </div>
 
-                    <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-purple-300 transition-colors">
+                    <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {productCount} {productCount === 1 ? "product" : "products"}
                     </p>
-
-                    <ArrowRight className="absolute top-6 right-6 w-5 h-5 text-white/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </div>
                 </Link>
               </motion.div>

@@ -62,7 +62,7 @@ export function AdminDashboard() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
                 activeTab === tab.id
-                  ? "bg-gradient-to-r from-purple-600 to-blue-600 text-foreground shadow-lg"
+                  ? "bg-primary text-primary-foreground shadow-lg"
                   : "text-muted-foreground hover:text-foreground hover:bg-card"
               )}
             >

@@ -137,7 +137,7 @@ export default function UserLoginPage() {
       >
         <div className="p-8 rounded-2xl border border-border bg-card backdrop-blur-xl shadow-2xl">
           <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
               <LogIn className="w-7 h-7 text-foreground" />
             </div>
             <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
@@ -168,13 +168,13 @@ export default function UserLoginPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-2 bg-gray-900 text-muted-foreground">or sign in with email</span>
+              <span className="px-2 bg-card text-muted-foreground">or sign in with email</span>
             </div>
           </div>
 
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Email</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Email</label>
               <Input
                 type="email"
                 value={email}
@@ -184,7 +184,7 @@ export default function UserLoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Password</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Password</label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}

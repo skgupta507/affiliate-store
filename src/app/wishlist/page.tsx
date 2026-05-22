@@ -33,9 +33,9 @@ export default function WishlistPage() {
         ) : (
           <div className="text-center py-20">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-border flex items-center justify-center">
-              <Heart className="w-8 h-8 text-white/20" />
+              <Heart className="w-8 h-8 text-muted-foreground/30" />
             </div>
-            <h3 className="text-lg font-semibold text-white/70 mb-2">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Your wishlist is empty
             </h3>
             <p className="text-sm text-muted-foreground mb-6">

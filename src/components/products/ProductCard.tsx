@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Heart, ExternalLink, Star, TrendingUp, Sparkles, ShoppingCart, Check } from "lucide-react";
 import { Product } from "@/types";
 import { useStore } from "@/store/useStore";
-import { formatPrice, truncateText, getRelativeTime } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { useState } from "react";
 
 interface ProductCardProps {
@@ -92,7 +92,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
 
       {/* Image */}
       <Link href={`/products/${product.id}`}>
-        <div className="relative aspect-square overflow-hidden bg-secondary/50">
+        <div className="relative aspect-[5/4] overflow-hidden bg-secondary/50">
           {product.image ? (
             <Image
               src={product.image}
@@ -110,35 +110,31 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       </Link>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-3">
         {/* Platform & Category */}
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground">
+        <div className="flex items-center gap-1 mb-1.5">
+          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground">
             {product.platform}
           </span>
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border border-border text-muted-foreground">
+          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded border border-border text-muted-foreground">
             {product.category}
           </span>
         </div>
 
         <Link href={`/products/${product.id}`}>
-          <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-1">
+          <h3 className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-1">
             {product.title}
           </h3>
         </Link>
 
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-          {truncateText(product.description, 80)}
-        </p>
-
         {/* Rating */}
         {product.rating && (
-          <div className="flex items-center gap-1.5 mb-3">
-            <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-green-500/10 border border-green-500/20">
-              <span className="text-xs font-bold text-green-600 dark:text-green-400">{product.rating}</span>
-              <Star className="w-2.5 h-2.5 fill-green-500 text-green-500" />
+          <div className="flex items-center gap-1 mb-2">
+            <div className="flex items-center gap-0.5 px-1 py-0.5 rounded bg-green-500/10 border border-green-500/20">
+              <span className="text-[10px] font-bold text-green-600 dark:text-green-400">{product.rating}</span>
+              <Star className="w-2 h-2 fill-green-500 text-green-500" />
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-[10px] text-muted-foreground">
               ({product.reviewCount?.toLocaleString() || 0})
             </span>
           </div>
@@ -148,12 +144,12 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         <div className="flex items-center justify-between">
           <div>
             {product.price && (
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-foreground">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold text-foreground">
                   {formatPrice(product.price, product.currency)}
                 </span>
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-xs text-muted-foreground line-through">
+                  <span className="text-[10px] text-muted-foreground line-through">
                     {formatPrice(product.originalPrice, product.currency)}
                   </span>
                 )}
@@ -163,33 +159,29 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           {isAffiliate ? (
             <button
               onClick={handleBuyNow}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold shadow-[0_2px_8px_var(--glow-primary)] hover:scale-[1.02] transition-all"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold shadow-[0_2px_8px_var(--glow-primary)] hover:scale-[1.02] transition-all"
             >
-              Buy <ExternalLink className="w-3 h-3" />
+              Buy <ExternalLink className="w-2.5 h-2.5" />
             </button>
           ) : (
             <button
               onClick={handleAddToCart}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all ${
                 justAdded || isInCart
                   ? "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30"
                   : "bg-primary text-primary-foreground shadow-[0_2px_8px_var(--glow-primary)] hover:scale-[1.02]"
               }`}
             >
               {justAdded ? (
-                <><Check className="w-3 h-3" /> Added</>
+                <><Check className="w-2.5 h-2.5" /> Added</>
               ) : isInCart ? (
-                <><Check className="w-3 h-3" /> In Cart</>
+                <><Check className="w-2.5 h-2.5" /> In Cart</>
               ) : (
-                <><ShoppingCart className="w-3 h-3" /> Add</>
+                <><ShoppingCart className="w-2.5 h-2.5" /> Add</>
               )}
             </button>
           )}
         </div>
-
-        <p className="text-[10px] text-muted-foreground/60 mt-2">
-          Added {getRelativeTime(product.createdAt)}
-        </p>
       </div>
     </motion.div>
   );

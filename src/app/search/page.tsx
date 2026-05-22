@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search as SearchIcon } from "lucide-react";
 import { useStore } from "@/store/useStore";
@@ -8,9 +9,18 @@ import { ProductGrid } from "@/components/products/ProductGrid";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
-export default function SearchPage() {
+function SearchContent() {
   const { products } = useStore();
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get("q") || "";
+  const [query, setQuery] = useState(urlQuery);
+
+  // Sync URL query param to local state
+  useEffect(() => {
+    if (urlQuery) {
+      setQuery(urlQuery);
+    }
+  }, [urlQuery]);
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
@@ -21,7 +31,8 @@ export default function SearchPage() {
         p.description.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q) ||
         p.tags.some((t) => t.toLowerCase().includes(q)) ||
-        p.platform.toLowerCase().includes(q)
+        p.platform.toLowerCase().includes(q) ||
+        (p.brand && p.brand.toLowerCase().includes(q))
     );
   }, [products, query]);
 
@@ -59,7 +70,7 @@ export default function SearchPage() {
                 <button
                   key={tag}
                   onClick={() => setQuery(tag)}
-                  className="text-xs px-3 py-1 rounded-full bg-card border border-border text-white/60 hover:text-foreground hover:bg-white/10 transition-all"
+                  className="text-xs px-3 py-1 rounded-full bg-secondary border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
                 >
                   {tag}
                 </button>
@@ -76,8 +87,27 @@ export default function SearchPage() {
           </div>
         )}
 
-        {query && <ProductGrid products={results} />}
+        {query && results.length > 0 && <ProductGrid products={results} />}
+
+        {query && results.length === 0 && (
+          <div className="text-center py-16">
+            <SearchIcon className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">No results found</h3>
+            <p className="text-sm text-muted-foreground">
+              Try different keywords or browse our categories.
+            </p>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="px-4 py-20 text-center text-muted-foreground">Loading...</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

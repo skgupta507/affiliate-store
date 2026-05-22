@@ -83,7 +83,7 @@ export default function SignupPage() {
           isAdmin: false,
           provider: "email",
         });
-        success("Account created!", "Welcome to AffiliateHub.");
+        success("Account created!", "Welcome to TheIdeaDecorator.");
         router.push("/profile");
       } catch (err: any) {
         if (err.code === "auth/email-already-in-use") {
@@ -100,7 +100,7 @@ export default function SignupPage() {
         isAdmin: false,
         provider: "email",
       });
-      success("Account created (demo)!", "Welcome to AffiliateHub.");
+      success("Account created (demo)!", "Welcome to TheIdeaDecorator.");
       router.push("/profile");
     }
 
@@ -150,12 +150,12 @@ export default function SignupPage() {
       >
         <div className="p-8 rounded-2xl border border-border bg-card backdrop-blur-xl shadow-2xl">
           <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
               <UserPlus className="w-7 h-7 text-foreground" />
             </div>
             <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
             <p className="text-sm text-muted-foreground mt-2">
-              Join AffiliateHub to save favorites and track deals
+              Join TheIdeaDecorator to save favorites and track deals
             </p>
           </div>
 
@@ -181,13 +181,13 @@ export default function SignupPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-2 bg-gray-900 text-muted-foreground">or sign up with email</span>
+              <span className="px-2 bg-card text-muted-foreground">or sign up with email</span>
             </div>
           </div>
 
           <form onSubmit={handleEmailSignup} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Name</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Name</label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -196,7 +196,7 @@ export default function SignupPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Email</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Email</label>
               <Input
                 type="email"
                 value={email}
@@ -206,7 +206,7 @@ export default function SignupPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Password</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Password</label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -225,7 +225,7 @@ export default function SignupPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Confirm Password</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Confirm Password</label>
               <Input
                 type="password"
                 value={confirmPassword}
@@ -242,7 +242,7 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             Already have an account?{" "}
-            <Link href="/user-login" className="text-primary hover:text-purple-300">
+            <Link href="/user-login" className="text-primary hover:text-primary/80">
               Log in
             </Link>
           </p>
