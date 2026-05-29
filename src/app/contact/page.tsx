@@ -42,7 +42,7 @@ const faqs = [
 ];
 
 const socialLinks = [
-  { name: "WhatsApp", icon: MessageCircle, href: "https://wa.me/918000000000?text=Hi%2C%20I%20need%20help%20with%20my%20order", color: "text-green-500", bg: "bg-green-500/10 hover:bg-green-500/20" },
+  { name: "WhatsApp", icon: MessageCircle, href: "https://wa.me/917892430507?text=Hi%2C%20I%20need%20help%20with%20my%20order", color: "text-green-500", bg: "bg-green-500/10 hover:bg-green-500/20" },
 ];
 
 const hours = [
@@ -104,17 +104,36 @@ export default function ContactPage() {
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="space-y-4">
               <h2 className="text-2xl font-bold text-foreground mb-6">Contact Information</h2>
 
-              <a href="mailto:support@theideadecorator.in" className="flex items-start gap-4 p-5 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all group">
-                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                  <Mail className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground mb-0.5">Email Us</p>
-                  <p className="text-primary text-sm font-medium">support@theideadecorator.in</p>
-                  <p className="text-xs text-muted-foreground mt-1">We respond within 24 business hours</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </a>
+              <a 
+              href="mailto:support@theideadecorator.in"
+              className="flex items-start gap-4 p-5 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all group"
+>
+  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+    <Mail className="w-5 h-5 text-primary" />
+  </div>
+
+  <div>
+    <p className="text-sm font-semibold text-foreground mb-0.5">
+      Email Us
+    </p>
+
+    {/* Owner Name */}
+    <p className="text-sm font-medium text-foreground">
+      Sunil Kumar Gupta
+    </p>
+
+    {/* Email */}
+    <p className="text-primary text-sm font-medium">
+      support@theideadecorator.in
+    </p>
+
+    <p className="text-xs text-muted-foreground mt-1">
+      We respond within 24 business hours
+    </p>
+  </div>
+
+  <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+</a>
 
               <div className="flex items-start gap-4 p-5 rounded-2xl border border-border bg-card">
                 <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
