@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   ShoppingCart,
+  Layers,
 } from "lucide-react";
 import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
@@ -20,18 +21,23 @@ import { AdminCategories } from "./AdminCategories";
 import { AdminAddProduct } from "./AdminAddProduct";
 import { AdminSettings } from "./AdminSettings";
 import { AdminOrders } from "./AdminOrders";
+import { AdminInventory } from "./AdminInventory";
 import { cn } from "@/lib/utils";
 
-type Tab = "overview" | "products" | "add" | "categories" | "orders" | "settings";
+type Tab = "overview" | "products" | "add" | "categories" | "orders" | "inventory" | "settings";
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const { logout, user } = useStore();
+  const { logout, user, products } = useStore();
+
+  // Low stock count for badge
+  const lowStockCount = products.filter(p => !p.isAffiliate && (p.stock ?? 0) <= 10).length;
 
   const tabs = [
     { id: "overview" as Tab, label: "Overview", icon: LayoutDashboard },
     { id: "add" as Tab, label: "Add Product", icon: Plus },
     { id: "products" as Tab, label: "Products", icon: Package },
+    { id: "inventory" as Tab, label: "Inventory", icon: Layers, badge: lowStockCount > 0 ? lowStockCount : undefined },
     { id: "categories" as Tab, label: "Categories", icon: Tag },
     { id: "orders" as Tab, label: "Orders", icon: ShoppingCart },
     { id: "settings" as Tab, label: "Settings", icon: Settings },
@@ -60,7 +66,7 @@ export function AdminDashboard() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
+                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all relative",
                 activeTab === tab.id
                   ? "bg-primary text-primary-foreground shadow-lg"
                   : "text-muted-foreground hover:text-foreground hover:bg-card"
@@ -68,6 +74,11 @@ export function AdminDashboard() {
             >
               <tab.icon className="w-4 h-4" />
               <span className="hidden sm:inline">{tab.label}</span>
+              {tab.badge !== undefined && (
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] flex items-center justify-center font-bold">
+                  {tab.badge > 9 ? "9+" : tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -82,6 +93,7 @@ export function AdminDashboard() {
           {activeTab === "overview" && <AdminOverview />}
           {activeTab === "add" && <AdminAddProduct />}
           {activeTab === "products" && <AdminProducts />}
+          {activeTab === "inventory" && <AdminInventory />}
           {activeTab === "categories" && <AdminCategories />}
           {activeTab === "orders" && <AdminOrders />}
           {activeTab === "settings" && <AdminSettings />}

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Globe, Mail, MessageCircle } from "lucide-react";
+import { Home, Mail, MapPin, MessageCircle, ChevronUp } from "lucide-react";
 
 export function Footer() {
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
   return (
     <footer className="border-t border-border mt-8 bg-card/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -19,15 +21,31 @@ export function Footer() {
                 <span className="text-lg font-bold text-primary">Decorator</span>
               </div>
             </Link>
-            <p className="text-muted-foreground text-sm max-w-md leading-relaxed">
+            <p className="text-muted-foreground text-sm max-w-md leading-relaxed mb-4">
               Your one-stop destination for curated home decor, interior design products, furniture, lighting, and lifestyle essentials. Shop directly or find the best deals from top brands.
             </p>
-            <div className="flex gap-2 mt-4">
-              {[MessageCircle, Globe, Mail].map((Icon, i) => (
-                <a key={i} href="#" className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                  <Icon className="w-4 h-4" />
-                </a>
-              ))}
+
+            {/* Support Email */}
+            <a
+              href="mailto:support@theideadecorator.in"
+              className="inline-flex items-center gap-2 text-sm text-primary hover:underline mb-4"
+            >
+              <Mail className="w-4 h-4" />
+              support@theideadecorator.in
+            </a>
+
+            {/* Address */}
+            <div className="flex items-start gap-2 text-xs text-muted-foreground mb-4">
+              <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5 text-muted-foreground/60" />
+              <span>#541, Vidyasagar Saraiplaya, Thanisandra Main Road, Dr. SRK Nagar Post, Bangalore – 560077</span>
+            </div>
+
+            {/* Social */}
+            <div className="flex gap-2">
+              <a href="https://wa.me/917892430507?text=Hi%2C%20I%20need%20help" target="_blank" rel="noopener noreferrer"
+                className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-all">
+                <MessageCircle className="w-4 h-4" />
+              </a>
             </div>
           </div>
 
@@ -49,16 +67,19 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Account */}
+          {/* Support + Legal */}
           <div>
-            <h4 className="text-foreground font-semibold mb-4 text-sm">Account</h4>
+            <h4 className="text-foreground font-semibold mb-4 text-sm">Support & Legal</h4>
             <div className="flex flex-col gap-2.5">
               {[
-                { href: "/profile", label: "My Profile" },
-                { href: "/orders", label: "Orders" },
+                { href: "/profile", label: "My Account" },
+                { href: "/orders", label: "Track Orders" },
                 { href: "/wishlist", label: "Wishlist" },
-                { href: "/cart", label: "Cart" },
-                { href: "/contact", label: "Help & Support" },
+                { href: "/contact", label: "Contact Us" },
+                { href: "/shipping-policy", label: "Shipping Policy" },
+                { href: "/returns", label: "Returns & Refunds" },
+                { href: "/privacy-policy", label: "Privacy Policy" },
+                { href: "/terms", label: "Terms & Conditions" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} className="text-muted-foreground hover:text-foreground text-sm transition-colors">
                   {link.label}
@@ -70,19 +91,20 @@ export function Footer() {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-muted-foreground text-sm">
-            © 2025 TheIdeaDecorator. All rights reserved.
+            © {new Date().getFullYear()} TheIdeaDecorator. All rights reserved.
           </p>
-          <p className="text-muted-foreground/60 text-xs relative">
-            Some links may earn us a commission at no extra cost to you.
-            <a
-              href="/login"
-              className="absolute -right-3 -top-1 w-6 h-6 opacity-0 hover:opacity-100 transition-opacity duration-300"
-              title=""
-              aria-hidden="true"
+          <div className="flex items-center gap-4">
+            <p className="text-muted-foreground/60 text-xs">
+              Some links may earn us a commission at no extra cost to you.
+            </p>
+            <button
+              onClick={scrollToTop}
+              className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+              aria-label="Back to top"
             >
-              <span className="block w-2 h-2 rounded-full bg-muted-foreground/20 hover:bg-primary/50 transition-colors" />
-            </a>
-          </p>
+              <ChevronUp className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </footer>
