@@ -628,6 +628,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: "theideadecorator-store",
+      version: 2,
       partialize: (state) => ({
         products: state.products,
         categories: state.categories,
@@ -652,6 +653,21 @@ export const useStore = create<AppState>()(
         appliedCoupon: state.appliedCoupon,
         productQuestions: state.productQuestions,
       }),
+      migrate: (persistedState: unknown, version: number) => {
+        // If coming from old version or corrupted state, merge with defaults
+        const state = persistedState as Record<string, unknown> || {};
+        if (version < 2) {
+          // Ensure new fields exist
+          if (!state.productQuestions) state.productQuestions = [];
+          if (!state.priceAlerts) state.priceAlerts = [];
+          if (!state.tickets) state.tickets = [];
+          if (!state.notifications) state.notifications = [];
+          if (!state.coupons) state.coupons = [];
+          if (!state.reviews) state.reviews = [];
+          if (!state.appliedCoupon) state.appliedCoupon = null;
+        }
+        return state;
+      },
     }
   )
 );
