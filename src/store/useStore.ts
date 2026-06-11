@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Product, Category, ThemeMode, User, Watchlist, CartItem, Order, Address } from "@/types";
+import { Product, Category, ThemeMode, User, Watchlist, CartItem, Order, Address, Coupon, Review, BlogPost, Notification, SupportTicket, TicketReply, LoyaltyTier, FAQ } from "@/types";
 import { generateId } from "@/lib/utils";
 
 interface AppState {
@@ -12,6 +12,7 @@ interface AppState {
   updateProduct: (id: string, product: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
   incrementClicks: (id: string) => void;
+  incrementViewCount: (id: string) => void;
 
   // Categories
   categories: Category[];
@@ -76,6 +77,59 @@ interface AppState {
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+
+  // Coupons
+  coupons: Coupon[];
+  addCoupon: (coupon: Coupon) => void;
+  updateCoupon: (id: string, updates: Partial<Coupon>) => void;
+  deleteCoupon: (id: string) => void;
+  appliedCoupon: Coupon | null;
+  applyCoupon: (code: string) => { success: boolean; message: string };
+  removeCoupon: () => void;
+  getCouponDiscount: () => number;
+
+  // Reviews
+  reviews: Review[];
+  addReview: (review: Review) => void;
+  deleteReview: (id: string) => void;
+  markReviewHelpful: (id: string) => void;
+  getProductReviews: (productId: string) => Review[];
+
+  // Blog
+  blogPosts: BlogPost[];
+  addBlogPost: (post: BlogPost) => void;
+  updateBlogPost: (id: string, updates: Partial<BlogPost>) => void;
+  deleteBlogPost: (id: string) => void;
+
+  // Notifications
+  notifications: Notification[];
+  addNotification: (notification: Notification) => void;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
+  clearNotifications: () => void;
+  getUnreadCount: () => number;
+
+  // Loyalty
+  addLoyaltyPoints: (points: number) => void;
+  redeemLoyaltyPoints: (points: number) => boolean;
+  getLoyaltyTier: () => LoyaltyTier;
+
+  // Support Tickets
+  tickets: SupportTicket[];
+  createTicket: (ticket: Omit<SupportTicket, "id" | "createdAt" | "updatedAt" | "replies" | "status">) => void;
+  updateTicketStatus: (id: string, status: SupportTicket["status"]) => void;
+  addTicketReply: (ticketId: string, reply: Omit<TicketReply, "id" | "createdAt">) => void;
+
+  // FAQs
+  faqs: FAQ[];
+  addFaq: (faq: FAQ) => void;
+  updateFaq: (id: string, updates: Partial<FAQ>) => void;
+  deleteFaq: (id: string) => void;
+
+  // Price Alerts
+  priceAlerts: { productId: string; targetPrice: number }[];
+  addPriceAlert: (productId: string, targetPrice: number) => void;
+  removePriceAlert: (productId: string) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -99,6 +153,12 @@ export const useStore = create<AppState>()(
         set((state) => ({
           products: state.products.map((p) =>
             p.id === id ? { ...p, clicks: p.clicks + 1 } : p
+          ),
+        })),
+      incrementViewCount: (id) =>
+        set((state) => ({
+          products: state.products.map((p) =>
+            p.id === id ? { ...p, viewCount: (p.viewCount || 0) + 1 } : p
           ),
         })),
 
@@ -171,7 +231,7 @@ export const useStore = create<AppState>()(
             ),
           };
         }),
-      clearCart: () => set({ cart: [] }),
+      clearCart: () => set({ cart: [], appliedCoupon: null }),
       getCartTotal: () => {
         const state = get();
         return state.cart.reduce((total, item) => {
@@ -301,6 +361,182 @@ export const useStore = create<AppState>()(
       // Search
       searchQuery: "",
       setSearchQuery: (query) => set({ searchQuery: query }),
+
+      // Coupons
+      coupons: [],
+      addCoupon: (coupon) =>
+        set((state) => ({ coupons: [...state.coupons, coupon] })),
+      updateCoupon: (id, updates) =>
+        set((state) => ({
+          coupons: state.coupons.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+        })),
+      deleteCoupon: (id) =>
+        set((state) => ({ coupons: state.coupons.filter((c) => c.id !== id) })),
+      appliedCoupon: null,
+      applyCoupon: (code) => {
+        const state = get();
+        const coupon = state.coupons.find(
+          (c) => c.code.toLowerCase() === code.toLowerCase() && c.isActive
+        );
+        if (!coupon) return { success: false, message: "Invalid coupon code" };
+        if (new Date(coupon.validUntil) < new Date()) return { success: false, message: "Coupon has expired" };
+        if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) return { success: false, message: "Coupon usage limit reached" };
+        const cartTotal = state.getCartTotal();
+        if (coupon.minOrder && cartTotal < coupon.minOrder) return { success: false, message: `Minimum order of ₹${coupon.minOrder} required` };
+        if (coupon.firstOrderOnly && state.orders.length > 0) return { success: false, message: "This coupon is for first orders only" };
+        set({ appliedCoupon: coupon });
+        return { success: true, message: `Coupon "${coupon.code}" applied! You save ${coupon.type === "percentage" ? `${coupon.discount}%` : `₹${coupon.discount}`}` };
+      },
+      removeCoupon: () => set({ appliedCoupon: null }),
+      getCouponDiscount: () => {
+        const state = get();
+        if (!state.appliedCoupon) return 0;
+        const cartTotal = state.getCartTotal();
+        if (state.appliedCoupon.type === "percentage") {
+          const discount = (cartTotal * state.appliedCoupon.discount) / 100;
+          return state.appliedCoupon.maxDiscount ? Math.min(discount, state.appliedCoupon.maxDiscount) : discount;
+        }
+        return state.appliedCoupon.discount;
+      },
+
+      // Reviews
+      reviews: [],
+      addReview: (review) =>
+        set((state) => ({ reviews: [review, ...state.reviews] })),
+      deleteReview: (id) =>
+        set((state) => ({ reviews: state.reviews.filter((r) => r.id !== id) })),
+      markReviewHelpful: (id) =>
+        set((state) => ({
+          reviews: state.reviews.map((r) =>
+            r.id === id ? { ...r, helpful: r.helpful + 1 } : r
+          ),
+        })),
+      getProductReviews: (productId) => {
+        return get().reviews.filter((r) => r.productId === productId);
+      },
+
+      // Blog
+      blogPosts: [],
+      addBlogPost: (post) =>
+        set((state) => ({ blogPosts: [...state.blogPosts, post] })),
+      updateBlogPost: (id, updates) =>
+        set((state) => ({
+          blogPosts: state.blogPosts.map((p) =>
+            p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+          ),
+        })),
+      deleteBlogPost: (id) =>
+        set((state) => ({ blogPosts: state.blogPosts.filter((p) => p.id !== id) })),
+
+      // Notifications
+      notifications: [],
+      addNotification: (notification) =>
+        set((state) => ({ notifications: [notification, ...state.notifications].slice(0, 50) })),
+      markNotificationRead: (id) =>
+        set((state) => ({
+          notifications: state.notifications.map((n) =>
+            n.id === id ? { ...n, isRead: true } : n
+          ),
+        })),
+      markAllNotificationsRead: () =>
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
+        })),
+      clearNotifications: () => set({ notifications: [] }),
+      getUnreadCount: () => {
+        return get().notifications.filter((n) => !n.isRead).length;
+      },
+
+      // Loyalty
+      addLoyaltyPoints: (points) =>
+        set((state) => ({
+          currentUser: state.currentUser
+            ? { ...state.currentUser, loyaltyPoints: (state.currentUser.loyaltyPoints || 0) + points }
+            : null,
+        })),
+      redeemLoyaltyPoints: (points) => {
+        const state = get();
+        if (!state.currentUser || (state.currentUser.loyaltyPoints || 0) < points) return false;
+        set({
+          currentUser: {
+            ...state.currentUser!,
+            loyaltyPoints: (state.currentUser!.loyaltyPoints || 0) - points,
+          },
+        });
+        return true;
+      },
+      getLoyaltyTier: () => {
+        const state = get();
+        const totalSpent = state.currentUser?.totalSpent || 0;
+        if (totalSpent >= 50000) return "platinum";
+        if (totalSpent >= 25000) return "gold";
+        if (totalSpent >= 10000) return "silver";
+        return "bronze";
+      },
+
+      // Support Tickets
+      tickets: [],
+      createTicket: (ticket) =>
+        set((state) => ({
+          tickets: [
+            {
+              ...ticket,
+              id: generateId(),
+              status: "open" as const,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              replies: [],
+            },
+            ...state.tickets,
+          ],
+        })),
+      updateTicketStatus: (id, status) =>
+        set((state) => ({
+          tickets: state.tickets.map((t) =>
+            t.id === id ? { ...t, status, updatedAt: new Date().toISOString() } : t
+          ),
+        })),
+      addTicketReply: (ticketId, reply) =>
+        set((state) => ({
+          tickets: state.tickets.map((t) =>
+            t.id === ticketId
+              ? {
+                  ...t,
+                  replies: [...t.replies, { ...reply, id: generateId(), createdAt: new Date().toISOString() }],
+                  updatedAt: new Date().toISOString(),
+                }
+              : t
+          ),
+        })),
+
+      // FAQs
+      faqs: [
+        { id: "1", question: "What is your return policy?", answer: "We offer a 7-day easy return policy on all products. Items must be in original packaging and unused condition.", category: "Returns", order: 1 },
+        { id: "2", question: "How long does delivery take?", answer: "Standard delivery takes 3-5 business days. Express delivery is available for select locations and takes 1-2 days.", category: "Shipping", order: 2 },
+        { id: "3", question: "What payment methods do you accept?", answer: "We accept UPI, Credit/Debit Cards, Net Banking, Wallets (via Razorpay & PayU), and Cash on Delivery.", category: "Payment", order: 3 },
+        { id: "4", question: "How do I track my order?", answer: "Go to the Orders page from your profile. Click on any order to see tracking details and delivery status.", category: "Orders", order: 4 },
+        { id: "5", question: "Are affiliate products shipped by you?", answer: "No, affiliate products are sold by partner platforms (Amazon, Flipkart, etc.). You'll be redirected to their site for purchase. We earn a small commission at no extra cost to you.", category: "General", order: 5 },
+        { id: "6", question: "How does the loyalty program work?", answer: "Earn 1 point per ₹10 spent. Points can be redeemed for discounts on future orders. Higher tiers unlock better benefits!", category: "Loyalty", order: 6 },
+        { id: "7", question: "Can I cancel my order?", answer: "Yes, you can cancel pending or confirmed orders from the Orders page. Once shipped, cancellation is not possible but you can initiate a return.", category: "Orders", order: 7 },
+        { id: "8", question: "Do you offer free shipping?", answer: "Yes! Orders above ₹499 qualify for free shipping. Otherwise a flat ₹49 delivery charge applies.", category: "Shipping", order: 8 },
+      ],
+      addFaq: (faq) => set((state) => ({ faqs: [...state.faqs, faq] })),
+      updateFaq: (id, updates) =>
+        set((state) => ({
+          faqs: state.faqs.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+        })),
+      deleteFaq: (id) => set((state) => ({ faqs: state.faqs.filter((f) => f.id !== id) })),
+
+      // Price Alerts
+      priceAlerts: [],
+      addPriceAlert: (productId, targetPrice) =>
+        set((state) => ({
+          priceAlerts: [...state.priceAlerts.filter((a) => a.productId !== productId), { productId, targetPrice }],
+        })),
+      removePriceAlert: (productId) =>
+        set((state) => ({
+          priceAlerts: state.priceAlerts.filter((a) => a.productId !== productId),
+        })),
     }),
     {
       name: "theideadecorator-store",
@@ -318,6 +554,14 @@ export const useStore = create<AppState>()(
         user: state.user,
         currentUser: state.currentUser,
         isUserLoggedIn: state.isUserLoggedIn,
+        coupons: state.coupons,
+        reviews: state.reviews,
+        blogPosts: state.blogPosts,
+        notifications: state.notifications,
+        tickets: state.tickets,
+        faqs: state.faqs,
+        priceAlerts: state.priceAlerts,
+        appliedCoupon: state.appliedCoupon,
       }),
     }
   )

@@ -208,7 +208,13 @@ export default function UserLoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            <Link href="/forgot-password" className="text-primary/80 hover:text-primary">
+              Forgot your password?
+            </Link>
+          </p>
+
+          <p className="text-center text-sm text-muted-foreground mt-3">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-primary hover:text-primary">
               Sign up

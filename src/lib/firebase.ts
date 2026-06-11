@@ -13,6 +13,7 @@ import {
   fetchSignInMethodsForEmail,
   linkWithCredential,
   EmailAuthProvider,
+  sendPasswordResetEmail,
   type User as FirebaseUser,
 } from "firebase/auth";
 
@@ -47,6 +48,7 @@ export {
   fetchSignInMethodsForEmail,
   linkWithCredential,
   EmailAuthProvider,
+  sendPasswordResetEmail,
   hasFirebaseConfig,
 };
 

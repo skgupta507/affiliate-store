@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Sparkles, Zap, Star, ShoppingCart, Truck, RotateCcw, Shield, Clock, ChevronRight, ExternalLink, Heart, Check } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Star, ShoppingCart, Truck, RotateCcw, Shield, Clock, ChevronRight, ExternalLink, Heart, Check, Search } from "lucide-react";
 import { useStore } from "@/store/useStore";
 import { formatPrice } from "@/lib/utils";
 import { Product } from "@/types";
 import { useState } from "react";
+import { useRecommendations } from "@/components/products/Recommendations";
+import { OrganizationJsonLd } from "@/components/SEO";
 
 export default function HomePage() {
   const { products, categories, recentlyViewed } = useStore();
   const [activeTab, setActiveTab] = useState<"new" | "trending" | "toprated">("new");
+  const { personalizedPicks } = useRecommendations();
 
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 14);
   const trendingProducts = products.filter((p) => p.isTrending).slice(0, 14);
@@ -35,10 +38,46 @@ export default function HomePage() {
 
   return (
     <div>
+      {/* SEO Structured Data */}
+      <OrganizationJsonLd
+        name="TheIdeaDecorator"
+        url="https://theideadecorator.in"
+        logo="/logo.svg"
+        description="Discover curated home decor, furniture, electronics, and lifestyle products."
+      />
+
       {/* Top Banner */}
       <div className="bg-primary text-primary-foreground text-center py-1.5 text-[11px] font-medium">
         FREE SHIPPING on orders over ₹499 | Use code <span className="font-bold">DECOR10</span> for 10% off
       </div>
+
+      {/* Hero Search Bar */}
+      <section className="px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search for furniture, lighting, wall art, decor..."
+              className="w-full h-12 pl-12 pr-24 rounded-full bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.target as HTMLInputElement).value.trim()) {
+                  window.location.href = `/search?q=${encodeURIComponent((e.target as HTMLInputElement).value.trim())}`;
+                }
+              }}
+            />
+            <button
+              onClick={(e) => {
+                const input = (e.currentTarget as HTMLElement).previousElementSibling as HTMLInputElement;
+                if (input?.value.trim()) window.location.href = `/search?q=${encodeURIComponent(input.value.trim())}`;
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-4 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:scale-[1.02] transition-all"
+            >
+              Search
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* Hero + Categories */}
       <section className="px-4 sm:px-6 lg:px-8 py-3">
@@ -176,6 +215,13 @@ export default function HomePage() {
       {recentlyViewedProducts.length > 0 && (
         <GridSection title="Recently Viewed" icon={<Clock className="w-3.5 h-3.5 text-blue-500" />}>
           {recentlyViewedProducts.map((p) => <MiniProductCard key={p.id} product={p} />)}
+        </GridSection>
+      )}
+
+      {/* Personalized Recommendations */}
+      {personalizedPicks.length > 0 && (
+        <GridSection title="Recommended For You" icon={<Sparkles className="w-3.5 h-3.5 text-purple-500" />} link="/products">
+          {personalizedPicks.map((p) => <MiniProductCard key={p.id} product={p} />)}
         </GridSection>
       )}
 

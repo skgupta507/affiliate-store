@@ -83,6 +83,12 @@ export default function SignupPage() {
           isAdmin: false,
           provider: "email",
         });
+        // Send welcome email (fire and forget)
+        fetch("/api/send-welcome-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, name }),
+        }).catch(() => {});
         success("Account created!", "Welcome to TheIdeaDecorator.");
         router.push("/profile");
       } catch (err: any) {

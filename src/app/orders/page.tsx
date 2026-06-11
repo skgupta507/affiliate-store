@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatPrice, getRelativeTime } from "@/lib/utils";
+import { formatPrice, getRelativeTime, generateId } from "@/lib/utils";
 import { Package, ShoppingBag, Truck, CheckCircle, XCircle, Clock, ArrowRight, FileText } from "lucide-react";
 
 const statusConfig: Record<string, { color: string; icon: typeof Package; label: string }> = {
@@ -19,7 +21,82 @@ const statusConfig: Record<string, { color: string; icon: typeof Package; label:
 };
 
 export default function OrdersPage() {
-  const { orders, cancelOrder, currentUser } = useStore();
+  return (
+    <Suspense fallback={<div className="px-4 py-20 text-center text-muted-foreground">Loading orders...</div>}>
+      <OrdersContent />
+    </Suspense>
+  );
+}
+
+function OrdersContent() {
+  const { orders, cancelOrder, currentUser, addOrder, clearCart, removeCoupon, addLoyaltyPoints, updateUserProfile } = useStore();
+  const searchParams = useSearchParams();
+
+  // Handle PayU success redirect — create the order from sessionStorage
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    const method = searchParams.get("method");
+
+    if (paymentStatus === "success" && method === "payu") {
+      const pendingData = sessionStorage.getItem("pendingPayUOrder");
+      if (pendingData) {
+        try {
+          const pending = JSON.parse(pendingData);
+          const order = {
+            id: generateId(),
+            items: pending.items,
+            status: "confirmed" as const,
+            totalAmount: pending.totalAmount,
+            shippingAddress: pending.shippingAddress,
+            paymentMethod: "payu",
+            paymentStatus: "paid" as const,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            estimatedDelivery: new Date(Date.now() + 5 * 86400000).toISOString(),
+            couponCode: pending.couponCode,
+            couponDiscount: pending.couponDiscount,
+            userId: pending.userId,
+          };
+          addOrder(order);
+          clearCart();
+          removeCoupon();
+
+          // Award loyalty points
+          const pointsEarned = Math.floor(pending.totalAmount / 10);
+          if (pointsEarned > 0) addLoyaltyPoints(pointsEarned);
+
+          // Update user stats
+          if (currentUser) {
+            updateUserProfile({
+              totalSpent: (currentUser.totalSpent || 0) + pending.totalAmount,
+              orderCount: (currentUser.orderCount || 0) + 1,
+            });
+          }
+
+          // Send order email
+          if (pending.customerEmail) {
+            fetch("/api/send-order-email", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                customerEmail: pending.customerEmail,
+                customerName: pending.customerName || "Customer",
+                orderId: order.id,
+                items: order.items,
+                totalAmount: order.totalAmount,
+                paymentMethod: "payu",
+                shippingAddress: order.shippingAddress,
+                orderDate: order.createdAt,
+              }),
+            }).catch(() => {});
+          }
+        } catch (e) {
+          console.error("Failed to create PayU order:", e);
+        }
+        sessionStorage.removeItem("pendingPayUOrder");
+      }
+    }
+  }, [searchParams]);
 
   const handleViewInvoice = (order: typeof orders[0]) => {
     const invoiceWindow = window.open("", "_blank");

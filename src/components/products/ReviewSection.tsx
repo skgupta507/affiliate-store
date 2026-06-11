@@ -209,7 +209,14 @@ export function ReviewSection({ productId, reviews, onAddReview }: ReviewSection
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">{review.userName}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground">{review.userName}</p>
+                    {review.verifiedPurchase && (
+                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20">
+                        ✓ Verified Purchase
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] text-muted-foreground">{getRelativeTime(review.createdAt)}</p>
                 </div>
               </div>

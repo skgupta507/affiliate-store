@@ -19,12 +19,14 @@ import {
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/products", label: "Shop" },
   { href: "/categories", label: "Categories" },
   { href: "/deals", label: "Deals" },
+  { href: "/blog", label: "Blog" },
   { href: "/about", label: "About" },
 ];
 
@@ -134,6 +136,9 @@ export function Navbar() {
                 )}
               </Link>
 
+              {/* Notifications */}
+              {isUserLoggedIn && <NotificationBell />}
+
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
@@ -211,6 +216,27 @@ export function Navbar() {
                   className="px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
                 >
                   My Orders
+                </Link>
+                <Link
+                  href="/rewards"
+                  onClick={() => setMobileOpen(false)}
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
+                >
+                  Rewards
+                </Link>
+                <Link
+                  href="/faq"
+                  onClick={() => setMobileOpen(false)}
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
+                >
+                  FAQ
+                </Link>
+                <Link
+                  href="/support"
+                  onClick={() => setMobileOpen(false)}
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
+                >
+                  Support
                 </Link>
                 {!isUserLoggedIn && (
                   <Link

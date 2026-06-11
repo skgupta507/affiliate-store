@@ -47,7 +47,7 @@ export function FirestoreSync() {
       if (dbProducts.length > 0) {
         skipNextSync.current = true;
         useStore.setState({ products: dbProducts });
-        prevProductIds.current = JSON.stringify(dbProducts.map((p) => p.id).sort());
+        prevProductIds.current = JSON.stringify(dbProducts.map((p) => `${p.id}:${p.updatedAt}`).sort());
       } else {
         // If Supabase is empty but local has data, push local to Supabase
         const localProducts = useStore.getState().products;
@@ -56,7 +56,7 @@ export function FirestoreSync() {
             await saveProduct(p);
           }
         }
-        prevProductIds.current = JSON.stringify(localProducts.map((p) => p.id).sort());
+        prevProductIds.current = JSON.stringify(localProducts.map((p) => `${p.id}:${p.updatedAt}`).sort());
       }
 
       if (dbCategories.length > 0) {
@@ -81,7 +81,7 @@ export function FirestoreSync() {
       if (!mounted) return;
       skipNextSync.current = true;
       useStore.setState({ products: dbProducts });
-      prevProductIds.current = JSON.stringify(dbProducts.map((p) => p.id).sort());
+      prevProductIds.current = JSON.stringify(dbProducts.map((p) => `${p.id}:${p.updatedAt}`).sort());
     });
 
     const unsubCategories = subscribeToCategories((dbCategories) => {
@@ -108,11 +108,18 @@ export function FirestoreSync() {
       return;
     }
 
-    const currentIds = JSON.stringify(products.map((p) => p.id).sort());
-    if (currentIds === prevProductIds.current) return;
+    // Use a hash that includes product data (updatedAt changes on edit), not just IDs
+    const currentHash = JSON.stringify(products.map((p) => `${p.id}:${p.updatedAt}`).sort());
+    if (currentHash === prevProductIds.current) return;
 
     const prevIds = new Set<string>(
-      prevProductIds.current ? JSON.parse(prevProductIds.current) : []
+      (() => {
+        try {
+          const parsed = JSON.parse(prevProductIds.current || "[]");
+          // Handle both old format (just IDs) and new format (id:updatedAt)
+          return parsed.map((s: string) => s.split(":")[0]);
+        } catch { return []; }
+      })()
     );
     const currentIdSet = new Set(products.map((p) => p.id));
 
@@ -128,7 +135,7 @@ export function FirestoreSync() {
       }
     }
 
-    prevProductIds.current = currentIds;
+    prevProductIds.current = currentHash;
   }, [products]);
 
   // Sync category changes to Supabase

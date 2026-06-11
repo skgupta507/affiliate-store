@@ -41,6 +41,7 @@ export default function ProfilePage() {
     toggleWishlist,
     products,
     recentlyViewed,
+    orders,
   } = useStore();
   const router = useRouter();
   const { success, error } = useToast();
@@ -51,7 +52,7 @@ export default function ProfilePage() {
     }
   }, [isUserLoggedIn, router]);
 
-  const [activeTab, setActiveTab] = useState<"profile" | "wishlist" | "watchlists" | "history">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "orders" | "wishlist" | "watchlists" | "history" | "password">("profile");
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState(currentUser?.displayName || "");
   const [newPhotoURL, setNewPhotoURL] = useState("");
@@ -108,6 +109,7 @@ export default function ProfilePage() {
 
   const tabs = [
     { id: "profile" as const, label: "Profile", icon: User },
+    { id: "orders" as const, label: "Orders", icon: Package },
     { id: "wishlist" as const, label: "Wishlist", icon: Heart },
     { id: "watchlists" as const, label: "Watchlists", icon: List },
     { id: "history" as const, label: "History", icon: Clock },
@@ -258,6 +260,58 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+          </motion.div>
+        )}
+
+        {/* Orders Tab */}
+        {activeTab === "orders" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <h2 className="text-lg font-semibold text-foreground mb-6">
+              My Orders ({orders.length})
+            </h2>
+            {orders.length > 0 ? (
+              <div className="space-y-3">
+                {orders.slice(0, 20).map((order) => (
+                  <Card key={order.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">Order #{order.id.slice(0, 8).toUpperCase()}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                        </div>
+                        <Badge variant={order.status === "delivered" ? "default" : order.status === "cancelled" ? "destructive" : "secondary"} className="text-[10px] capitalize">
+                          {order.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1.5">
+                        {order.items.slice(0, 3).map((item) => (
+                          <div key={item.productId} className="flex items-center gap-2 text-xs">
+                            {item.image && <img src={item.image} alt="" className="w-8 h-8 rounded object-cover" />}
+                            <span className="text-muted-foreground truncate flex-1">{item.title} × {item.quantity}</span>
+                            <span className="text-foreground font-medium">₹{(item.price * item.quantity).toLocaleString("en-IN")}</span>
+                          </div>
+                        ))}
+                        {order.items.length > 3 && <p className="text-[10px] text-muted-foreground">+{order.items.length - 3} more items</p>}
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                        <span className="text-xs text-muted-foreground capitalize">Payment: {order.paymentMethod}</span>
+                        <span className="text-sm font-bold text-foreground">₹{order.totalAmount.toLocaleString("en-IN")}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Package className="w-10 h-10 text-white/20 mx-auto mb-3" />
+                  <p className="text-muted-foreground">No orders yet.</p>
+                  <Link href="/products">
+                    <Button variant="outline" className="mt-4">Start Shopping</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         )}
 

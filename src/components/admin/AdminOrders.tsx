@@ -23,6 +23,26 @@ const statusColors: Record<string, string> = {
 export function AdminOrders() {
   const { orders, updateOrderStatus } = useStore();
 
+  const handleStatusChange = (order: Order, newStatus: Order["status"]) => {
+    updateOrderStatus(order.id, newStatus);
+
+    // Send status email to customer (fire and forget)
+    const customerEmail = order.userId || "";
+    if (customerEmail) {
+      fetch("/api/send-status-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: customerEmail,
+          customerName: order.shippingAddress.fullName,
+          orderId: order.id,
+          status: newStatus,
+          trackingNumber: order.trackingNumber,
+        }),
+      }).catch(() => {});
+    }
+  };
+
   if (orders.length === 0) {
     return (
       <Card>
@@ -94,7 +114,7 @@ export function AdminOrders() {
                 <div className="flex gap-2">
                   <select
                     value={order.status}
-                    onChange={(e) => updateOrderStatus(order.id, e.target.value as Order["status"])}
+                    onChange={(e) => handleStatusChange(order, e.target.value as Order["status"])}
                     className="text-xs px-3 py-1.5 rounded-lg bg-secondary border border-border text-foreground appearance-none cursor-pointer"
                     style={{ colorScheme: "dark" }}
                   >

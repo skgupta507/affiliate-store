@@ -4,7 +4,7 @@ import crypto from "crypto";
 /**
  * POST /api/payu/success
  * PayU redirects here after successful payment via form POST.
- * Verifies the reverse hash and redirects to orders page.
+ * Verifies the reverse hash and redirects to the order completion page.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -22,10 +22,10 @@ export async function POST(request: NextRequest) {
     const key = process.env.PAYU_MERCHANT_KEY;
 
     if (!salt || !key) {
-      return NextResponse.redirect(new URL("/orders?payment=error", request.url));
+      return NextResponse.redirect(new URL("/orders?payment=error&reason=config", request.url));
     }
 
-    // Reverse hash: sha512(salt|status|||||||||||email|firstname|productinfo|amount|txnid|key)
+    // Reverse hash verification
     let reverseHashString = `${salt}|${status}|||||||||||${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
     if (additionalCharges) {
       reverseHashString = `${additionalCharges}|${reverseHashString}`;
@@ -33,9 +33,10 @@ export async function POST(request: NextRequest) {
     const generatedHash = crypto.createHash("sha512").update(reverseHashString).digest("hex");
 
     if (generatedHash === hash && status === "success") {
-      return NextResponse.redirect(new URL(`/orders?payment=success&txnid=${txnid}`, request.url));
+      // Redirect to orders page with success flag — client will pick up pendingPayUOrder from sessionStorage
+      return NextResponse.redirect(new URL(`/orders?payment=success&txnid=${txnid}&method=payu`, request.url));
     } else {
-      return NextResponse.redirect(new URL("/orders?payment=failed", request.url));
+      return NextResponse.redirect(new URL(`/orders?payment=failed&reason=hash_mismatch`, request.url));
     }
   } catch (err) {
     console.error("PayU success handler error:", err);
@@ -43,7 +44,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PayU may also send GET in some cases
 export async function GET(request: NextRequest) {
   return NextResponse.redirect(new URL("/orders", request.url));
 }

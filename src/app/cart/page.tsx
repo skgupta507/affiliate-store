@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { formatPrice } from "@/lib/utils";
 import {
   ShoppingCart,
@@ -15,10 +17,16 @@ import {
   ShoppingBag,
   Tag,
   Truck,
+  Ticket,
+  X,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 
 export default function CartPage() {
-  const { cart, products, removeFromCart, updateCartQuantity, clearCart, isUserLoggedIn } = useStore();
+  const { cart, products, removeFromCart, updateCartQuantity, clearCart, isUserLoggedIn, appliedCoupon, applyCoupon, removeCoupon, getCouponDiscount } = useStore();
+  const [couponCode, setCouponCode] = useState("");
+  const [couponMessage, setCouponMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const cartItems = cart.map((item) => ({
     ...item,
@@ -35,7 +43,16 @@ export default function CartPage() {
     return sum + (original - current) * item.quantity;
   }, 0);
   const deliveryFee = subtotal > 499 ? 0 : 49;
-  const total = subtotal + deliveryFee;
+  const couponDiscount = getCouponDiscount();
+  const total = subtotal + deliveryFee - couponDiscount;
+
+  const handleApplyCoupon = () => {
+    if (!couponCode.trim()) return;
+    const result = applyCoupon(couponCode.trim());
+    setCouponMessage({ type: result.success ? "success" : "error", text: result.message });
+    if (result.success) setCouponCode("");
+    setTimeout(() => setCouponMessage(null), 5000);
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -175,6 +192,14 @@ export default function CartPage() {
                     <span>-{formatPrice(savings)}</span>
                   </div>
                 )}
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-green-600 dark:text-green-400">
+                    <span className="flex items-center gap-1">
+                      <Ticket className="w-3 h-3" /> Coupon ({appliedCoupon?.code})
+                    </span>
+                    <span>-{formatPrice(couponDiscount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Truck className="w-3 h-3" /> Delivery
@@ -186,6 +211,45 @@ export default function CartPage() {
                 {deliveryFee > 0 && (
                   <p className="text-[10px] text-muted-foreground/60">
                     Free delivery on orders above ₹499
+                  </p>
+                )}
+              </div>
+
+              {/* Coupon Section */}
+              <div className="border-t border-border pt-4 space-y-3">
+                <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                  <Ticket className="w-4 h-4 text-primary" /> Apply Coupon
+                </p>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <div>
+                      <p className="text-xs font-bold text-green-600 dark:text-green-400">{appliedCoupon.code}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {appliedCoupon.type === "percentage" ? `${appliedCoupon.discount}% off` : `₹${appliedCoupon.discount} off`}
+                      </p>
+                    </div>
+                    <button onClick={removeCoupon} className="text-muted-foreground hover:text-foreground">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="Enter code"
+                      className="text-xs uppercase"
+                      onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                    />
+                    <Button size="sm" variant="outline" onClick={handleApplyCoupon} className="shrink-0">
+                      Apply
+                    </Button>
+                  </div>
+                )}
+                {couponMessage && (
+                  <p className={`text-[11px] flex items-center gap-1 ${couponMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
+                    {couponMessage.type === "success" ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                    {couponMessage.text}
                   </p>
                 )}
               </div>

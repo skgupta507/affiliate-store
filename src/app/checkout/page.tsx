@@ -18,10 +18,11 @@ import {
   Truck,
   Shield,
   Package,
+  Ticket,
 } from "lucide-react";
 
 export default function CheckoutPage() {
-  const { cart, products, addresses, addAddress, addOrder, clearCart, isUserLoggedIn, currentUser, updateUserProfile } = useStore();
+  const { cart, products, addresses, addAddress, addOrder, clearCart, isUserLoggedIn, currentUser, updateUserProfile, appliedCoupon, getCouponDiscount, removeCoupon, addLoyaltyPoints } = useStore();
   const [step, setStep] = useState<"address" | "payment" | "confirm">("address");
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(
     addresses.find((a) => a.isDefault) || addresses[0] || null
@@ -74,7 +75,8 @@ export default function CheckoutPage() {
     0
   );
   const deliveryFee = subtotal > 499 ? 0 : 49;
-  const total = subtotal + deliveryFee;
+  const couponDiscount = getCouponDiscount();
+  const total = subtotal + deliveryFee - couponDiscount;
 
   const handleAddAddress = () => {
     if (!fullName || !phone || !addressLine1 || !city || !state || !pincode) return;
@@ -123,22 +125,33 @@ export default function CheckoutPage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         estimatedDelivery: new Date(Date.now() + 5 * 86400000).toISOString(),
+        couponCode: appliedCoupon?.code,
+        couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+        userId: currentUser?.uid || currentUser?.email,
       };
 
       addOrder(order);
       clearCart();
+      removeCoupon();
 
-      // Update user profile with order details
-      const profileUpdates: Record<string, unknown> = {};
+      // Award loyalty points (1 point per ₹10 spent)
+      const pointsEarned = Math.floor(total / 10);
+      if (pointsEarned > 0) {
+        addLoyaltyPoints(pointsEarned);
+      }
+
+      // Update user's total spent
+      const profileUpdates: Record<string, unknown> = {
+        totalSpent: (currentUser?.totalSpent || 0) + total,
+        orderCount: (currentUser?.orderCount || 0) + 1,
+      };
       if (!currentUser?.displayName && selectedAddress.fullName) {
         profileUpdates.displayName = selectedAddress.fullName;
       }
       if (!currentUser?.phone && selectedAddress.phone) {
         profileUpdates.phone = selectedAddress.phone;
       }
-      if (Object.keys(profileUpdates).length > 0) {
-        updateUserProfile(profileUpdates);
-      }
+      updateUserProfile(profileUpdates);
 
       // Send order confirmation email (fire and forget)
       if (currentUser?.email) {
@@ -177,7 +190,25 @@ export default function CheckoutPage() {
         },
       });
     } else if (paymentMethod === "payu") {
-      createOrder();
+      // PayU: store order details in sessionStorage, create order AFTER successful payment
+      const pendingOrder = {
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          title: item.product?.title || "",
+          image: item.product?.image || "",
+          price: item.product?.price || 0,
+          quantity: item.quantity,
+        })),
+        totalAmount: total,
+        shippingAddress: selectedAddress,
+        couponCode: appliedCoupon?.code,
+        couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+        userId: currentUser?.uid || currentUser?.email,
+        customerEmail: currentUser?.email,
+        customerName: selectedAddress.fullName,
+      };
+      sessionStorage.setItem("pendingPayUOrder", JSON.stringify(pendingOrder));
+
       try {
         await initiatePayUPayment({
           amount: total,
@@ -187,8 +218,10 @@ export default function CheckoutPage() {
           customerPhone: selectedAddress.phone,
           orderId: Date.now().toString(),
         });
+        // User gets redirected to PayU — order will be created on /api/payu/success callback
       } catch (err) {
         console.error("PayU payment failed:", err);
+        sessionStorage.removeItem("pendingPayUOrder");
       }
     } else {
       createOrder();
@@ -248,6 +281,11 @@ export default function CheckoutPage() {
     );
   }
 
+  // Stock validation: check if any item is out of stock
+  const outOfStockItems = cartItems.filter(
+    (item) => item.product && !item.product.isAffiliate && item.product.stock !== undefined && item.product.stock < item.quantity
+  );
+
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-5xl mx-auto">
@@ -260,6 +298,21 @@ export default function CheckoutPage() {
           </Link>
           <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
         </div>
+
+        {/* Stock Warning */}
+        {outOfStockItems.length > 0 && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+            <p className="text-sm font-semibold text-red-500 mb-2">⚠ Some items are out of stock or have limited availability:</p>
+            <ul className="space-y-1">
+              {outOfStockItems.map((item) => (
+                <li key={item.productId} className="text-xs text-red-400">
+                  • {item.product?.title} — {item.product?.stock === 0 ? "Out of stock" : `Only ${item.product?.stock} available (you have ${item.quantity})`}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground mt-2">Please update your cart before proceeding.</p>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="flex items-center gap-2 mb-8">
@@ -454,6 +507,12 @@ export default function CheckoutPage() {
                   <span>Items ({cartItems.length})</span>
                   <span className="text-foreground">{formatPrice(subtotal)}</span>
                 </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-green-600 dark:text-green-400">
+                    <span className="flex items-center gap-1"><Ticket className="w-3 h-3" /> Coupon</span>
+                    <span>-{formatPrice(couponDiscount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-muted-foreground">
                   <span>Delivery</span>
                   <span className={deliveryFee === 0 ? "text-green-400" : "text-foreground"}>

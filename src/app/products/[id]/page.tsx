@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { formatPrice, getRelativeTime } from "@/lib/utils";
+import { ReviewSection } from "@/components/products/ReviewSection";
+import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/SEO";
 import {
   ArrowLeft,
   ExternalLink,
@@ -41,14 +43,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     addToWatchlist,
     addToCart,
     cart,
+    reviews,
+    addReview,
+    markReviewHelpful,
+    orders,
+    incrementViewCount,
   } = useStore();
   const product = products.find((p) => p.id === id);
 
   useEffect(() => {
     if (product) {
       addToRecentlyViewed(product.id);
+      incrementViewCount(product.id);
     }
-  }, [product, addToRecentlyViewed]);
+  }, [product, addToRecentlyViewed, incrementViewCount]);
 
   if (!product) {
     return (
@@ -83,7 +91,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       incrementClicks(product.id);
       window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
     } else {
-      addToCart(product.id);
+      // Buy Now: add to cart and go directly to checkout
+      if (!isInCart) addToCart(product.id);
+      window.location.href = "/checkout";
     }
   };
 
@@ -111,6 +121,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-7xl mx-auto">
+        {/* SEO Structured Data */}
+        <ProductJsonLd
+          product={product}
+          reviews={reviews.filter((r) => r.productId === product.id)}
+          url={typeof window !== "undefined" ? window.location.href : ""}
+        />
+        <BreadcrumbJsonLd items={[
+          { name: "Home", url: "/" },
+          { name: "Products", url: "/products" },
+          { name: product.category, url: `/products?category=${product.category}` },
+          { name: product.title, url: `/products/${product.id}` },
+        ]} />
+
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
           <Link href="/" className="hover:text-muted-foreground">Home</Link>
@@ -293,6 +316,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
 
+              {/* Social Proof / Urgency */}
+              <div className="space-y-2">
+                {!product.isAffiliate && product.stock !== undefined && product.stock > 0 && product.stock <= 10 && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <span className="text-red-500 text-xs font-semibold">🔥 Only {product.stock} left in stock — order soon!</span>
+                  </div>
+                )}
+                {product.purchaseCount && product.purchaseCount > 0 && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <span className="text-green-600 dark:text-green-400 text-xs font-medium">✓ {product.purchaseCount} purchased this week</span>
+                  </div>
+                )}
+                {product.viewCount && product.viewCount > 10 && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <span className="text-blue-600 dark:text-blue-400 text-xs font-medium">👁 {product.viewCount} people viewed this recently</span>
+                  </div>
+                )}
+              </div>
+
               {/* Description */}
               <div>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-3">Description</h3>
@@ -366,14 +408,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   </Button>
                 ) : (
                   <>
-                    <Button size="lg" onClick={handleAddToCart} className="flex-1 gap-2 text-base">
+                    <Button size="lg" onClick={handleAddToCart} variant="outline" className="flex-1 gap-2 text-base">
                       {isInCart ? "Added to Cart ✓" : "Add to Cart"} <ShoppingCart className="w-4 h-4" />
                     </Button>
-                    <Link href="/cart">
-                      <Button variant="outline" size="lg" className="gap-2">
-                        Buy Now
-                      </Button>
-                    </Link>
+                    <Button size="lg" onClick={handleBuyNow} className="flex-1 gap-2 text-base">
+                      Buy Now <ArrowLeft className="w-4 h-4 rotate-180" />
+                    </Button>
                   </>
                 )}
                 <Button
@@ -391,9 +431,37 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <Share2 className="w-4 h-4" /> Share
                 </Button>
               </div>
+
+              {/* Stock Status */}
+              {!product.isAffiliate && (
+                <div className="pt-3">
+                  {product.stock === undefined ? null : product.stock > 10 ? (
+                    <p className="text-xs text-green-500 font-medium flex items-center gap-1">✓ In Stock</p>
+                  ) : product.stock > 0 ? (
+                    <p className="text-xs text-amber-500 font-medium flex items-center gap-1">⚠ Only {product.stock} left in stock</p>
+                  ) : (
+                    <p className="text-xs text-red-500 font-medium flex items-center gap-1">✕ Out of Stock</p>
+                  )}
+                </div>
+              )}
             </motion.div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <section className="mt-16">
+          <ReviewSection
+            productId={product.id}
+            reviews={reviews.filter((r) => r.productId === product.id)}
+            onAddReview={(review) => {
+              // Check if user purchased this product for "verified purchase" badge
+              const hasPurchased = orders.some((o) =>
+                o.status !== "cancelled" && o.items.some((item) => item.productId === product.id)
+              );
+              addReview({ ...review, verifiedPurchase: hasPurchased });
+            }}
+          />
+        </section>
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

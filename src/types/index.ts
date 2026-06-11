@@ -28,6 +28,15 @@ export interface Product {
   isAffiliate: boolean; // true = affiliate link, false = direct sell
   seller?: string;
   sellerRating?: number;
+  // SEO fields
+  metaTitle?: string;
+  metaDescription?: string;
+  slug?: string;
+  // Social proof
+  viewCount?: number;
+  purchaseCount?: number;
+  // Cost price for profit tracking
+  costPrice?: number;
 }
 
 export interface CartItem {
@@ -48,6 +57,9 @@ export interface Order {
   updatedAt: string;
   trackingNumber?: string;
   estimatedDelivery?: string;
+  couponCode?: string;
+  couponDiscount?: number;
+  userId?: string;
 }
 
 export interface OrderItem {
@@ -85,6 +97,7 @@ export interface Review {
   comment: string;
   images?: string[];
   helpful: number;
+  verifiedPurchase?: boolean;
   createdAt: string;
 }
 
@@ -108,7 +121,16 @@ export interface User {
   provider?: "email" | "google" | "local";
   phone?: string;
   addresses?: Address[];
+  loyaltyPoints?: number;
+  loyaltyTier?: LoyaltyTier;
+  referralCode?: string;
+  referredBy?: string;
+  totalSpent?: number;
+  orderCount?: number;
+  joinedAt?: string;
 }
+
+export type LoyaltyTier = "bronze" | "silver" | "gold" | "platinum";
 
 export interface Watchlist {
   id: string;
@@ -170,4 +192,85 @@ export interface Coupon {
   validUntil: string;
   usageLimit?: number;
   usedCount: number;
+  isActive: boolean;
+  description?: string;
+  applicableCategories?: string[];
+  firstOrderOnly?: boolean;
+}
+
+export interface LoyaltyReward {
+  id: string;
+  name: string;
+  description: string;
+  pointsRequired: number;
+  type: "discount" | "freeShipping" | "product";
+  value: number;
+  isActive: boolean;
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  coverImage: string;
+  author: string;
+  authorAvatar?: string;
+  category: string;
+  tags: string[];
+  publishedAt: string;
+  updatedAt: string;
+  readTime: number;
+  isPublished: boolean;
+  relatedProducts?: string[];
+  views: number;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: "price_drop" | "back_in_stock" | "order_update" | "promotion" | "reward";
+  title: string;
+  message: string;
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface AffiliateStats {
+  productId: string;
+  clicks: number;
+  platform: string;
+  estimatedCommission: number;
+  conversionRate?: number;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  userName: string;
+  orderId?: string;
+  subject: string;
+  message: string;
+  status: "open" | "in_progress" | "resolved" | "closed";
+  priority: "low" | "medium" | "high";
+  createdAt: string;
+  updatedAt: string;
+  replies: TicketReply[];
+}
+
+export interface TicketReply {
+  id: string;
+  message: string;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
+export interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  order: number;
 }

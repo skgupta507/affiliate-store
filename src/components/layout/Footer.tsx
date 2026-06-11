@@ -69,12 +69,15 @@ export function Footer() {
 
           {/* Support + Legal */}
           <div>
-            <h4 className="text-foreground font-semibold mb-4 text-sm">Support & Legal</h4>
+            <h4 className="text-foreground font-semibold mb-4 text-sm">Support & More</h4>
             <div className="flex flex-col gap-2.5">
               {[
                 { href: "/profile", label: "My Account" },
                 { href: "/orders", label: "Track Orders" },
-                { href: "/wishlist", label: "Wishlist" },
+                { href: "/rewards", label: "Rewards Program" },
+                { href: "/blog", label: "Blog" },
+                { href: "/faq", label: "FAQ" },
+                { href: "/support", label: "Help & Support" },
                 { href: "/contact", label: "Contact Us" },
                 { href: "/shipping-policy", label: "Shipping Policy" },
                 { href: "/returns", label: "Returns & Refunds" },

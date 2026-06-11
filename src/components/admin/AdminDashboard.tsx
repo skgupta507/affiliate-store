@@ -12,6 +12,10 @@ import {
   LogOut,
   ShoppingCart,
   Layers,
+  Ticket,
+  BookOpen,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
@@ -22,9 +26,13 @@ import { AdminAddProduct } from "./AdminAddProduct";
 import { AdminSettings } from "./AdminSettings";
 import { AdminOrders } from "./AdminOrders";
 import { AdminInventory } from "./AdminInventory";
+import { AdminCoupons } from "./AdminCoupons";
+import { AdminBlog } from "./AdminBlog";
+import { AdminAnalytics } from "./AdminAnalytics";
+import { AdminUsers } from "./AdminUsers";
 import { cn } from "@/lib/utils";
 
-type Tab = "overview" | "products" | "add" | "categories" | "orders" | "inventory" | "settings";
+type Tab = "overview" | "products" | "add" | "categories" | "orders" | "inventory" | "coupons" | "blog" | "analytics" | "users" | "settings";
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
@@ -40,6 +48,10 @@ export function AdminDashboard() {
     { id: "inventory" as Tab, label: "Inventory", icon: Layers, badge: lowStockCount > 0 ? lowStockCount : undefined },
     { id: "categories" as Tab, label: "Categories", icon: Tag },
     { id: "orders" as Tab, label: "Orders", icon: ShoppingCart },
+    { id: "coupons" as Tab, label: "Coupons", icon: Ticket },
+    { id: "blog" as Tab, label: "Blog", icon: BookOpen },
+    { id: "analytics" as Tab, label: "Analytics", icon: TrendingUp },
+    { id: "users" as Tab, label: "Users", icon: Users },
     { id: "settings" as Tab, label: "Settings", icon: Settings },
   ];
 
@@ -96,6 +108,10 @@ export function AdminDashboard() {
           {activeTab === "inventory" && <AdminInventory />}
           {activeTab === "categories" && <AdminCategories />}
           {activeTab === "orders" && <AdminOrders />}
+          {activeTab === "coupons" && <AdminCoupons />}
+          {activeTab === "blog" && <AdminBlog />}
+          {activeTab === "analytics" && <AdminAnalytics />}
+          {activeTab === "users" && <AdminUsers />}
           {activeTab === "settings" && <AdminSettings />}
         </motion.div>
       </div>
