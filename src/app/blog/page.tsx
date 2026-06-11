@@ -115,7 +115,7 @@ export default function BlogPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
                 <div className="relative aspect-[16/10] md:aspect-auto bg-secondary">
                   {featuredPost.coverImage && (
-                    <Image src={featuredPost.coverImage} alt={featuredPost.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <Image src={featuredPost.coverImage} alt={featuredPost.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                   )}
                   <Badge className="absolute top-4 left-4 gap-1">
                     <Sparkles className="w-3 h-3" /> Featured
@@ -152,7 +152,7 @@ export default function BlogPage() {
                   <div className="rounded-xl border border-border bg-card overflow-hidden group hover:shadow-md transition-shadow h-full flex flex-col">
                     <div className="relative aspect-[16/10] bg-secondary">
                       {post.coverImage && (
-                        <Image src={post.coverImage} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <Image src={post.coverImage} alt={post.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                       )}
                     </div>
                     <div className="p-4 flex flex-col flex-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 interface CountdownTimerProps {
   targetDate?: Date;
@@ -8,15 +8,21 @@ interface CountdownTimerProps {
 }
 
 export function CountdownTimer({ targetDate, className = "" }: CountdownTimerProps) {
-  // Default: end of today
-  const target = targetDate || new Date(new Date().setHours(23, 59, 59, 999));
-
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+
+  // Memoize target timestamp to avoid recalculating on every render
+  const targetTime = useMemo(() => {
+    if (targetDate) return targetDate.getTime();
+    // Default: end of today
+    const eod = new Date();
+    eod.setHours(23, 59, 59, 999);
+    return eod.getTime();
+  }, [targetDate?.getTime()]);
 
   useEffect(() => {
     const update = () => {
-      const now = new Date().getTime();
-      const diff = target.getTime() - now;
+      const now = Date.now();
+      const diff = targetTime - now;
       if (diff <= 0) {
         setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
         return;
@@ -31,7 +37,7 @@ export function CountdownTimer({ targetDate, className = "" }: CountdownTimerPro
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [target]);
+  }, [targetTime]);
 
   const pad = (n: number) => n.toString().padStart(2, "0");
 

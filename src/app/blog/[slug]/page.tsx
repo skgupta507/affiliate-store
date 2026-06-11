@@ -86,7 +86,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
           {/* Cover Image */}
           {post.coverImage && (
             <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-border mb-8">
-              <Image src={post.coverImage} alt={post.title} fill className="object-cover" />
+              <Image src={post.coverImage} alt={post.title} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover" />
             </div>
           )}
 

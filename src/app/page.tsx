@@ -13,6 +13,7 @@ import { CountdownTimer } from "@/components/CountdownTimer";
 
 export default function HomePage() {
   const { products, categories, recentlyViewed } = useStore();
+  const flashSaleEnd = useStore((s) => s.flashSaleEnd);
   const [activeTab, setActiveTab] = useState<"new" | "trending" | "toprated">("new");
   const [heroSlide, setHeroSlide] = useState(0);
   const { personalizedPicks } = useRecommendations();
@@ -225,7 +226,7 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <CountdownTimer />
+                <CountdownTimer targetDate={flashSaleEnd ? new Date(flashSaleEnd) : undefined} />
                 <Link href="/deals">
                   <button className="h-8 rounded-md bg-red-500 px-4 font-semibold text-xs text-white hover:scale-[1.02] transition-all flex items-center gap-1.5">
                     View Deals <ArrowRight className="w-3 h-3" />
