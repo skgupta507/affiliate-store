@@ -29,6 +29,7 @@ export function AdminProducts() {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editImage, setEditImage] = useState("");
+  const [editImages, setEditImages] = useState<string[]>([]);
   const [editUrl, setEditUrl] = useState("");
   const [editCategory, setEditCategory] = useState("");
   const [editTags, setEditTags] = useState("");
@@ -59,6 +60,7 @@ export function AdminProducts() {
     setEditTitle(product.title);
     setEditDescription(product.description);
     setEditImage(product.image);
+    setEditImages(product.images || []);
     setEditUrl(product.affiliateUrl);
     setEditCategory(product.category);
     setEditTags(product.tags.join(", "));
@@ -99,6 +101,7 @@ export function AdminProducts() {
       title: editTitle.trim(),
       description: editDescription.trim(),
       image: editImage.trim(),
+      images: editImages.filter((img) => img.trim() !== ""),
       affiliateUrl: editUrl.trim(),
       category: editCategory,
       tags: editTags.split(",").map((t) => t.trim()).filter(Boolean),
@@ -227,7 +230,7 @@ export function AdminProducts() {
 
             {/* Image — URL + File Upload */}
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Product Image</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Main Image</label>
               <div className="flex gap-3 items-start">
                 <div className="flex-1 space-y-2">
                   <Input value={editImage} onChange={(e) => setEditImage(e.target.value)} placeholder="Image URL (https://...)" />
@@ -244,6 +247,84 @@ export function AdminProducts() {
                     <img src={editImage} alt="Preview" className="w-full h-full object-cover" />
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Additional Images */}
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">
+                Additional Images ({editImages.length})
+              </label>
+              <p className="text-[10px] text-muted-foreground mb-2">Add multiple images for the product gallery. Users can swipe/click through them.</p>
+              
+              {/* Existing additional images */}
+              {editImages.length > 0 && (
+                <div className="flex gap-2 flex-wrap mb-3">
+                  {editImages.map((img, idx) => (
+                    <div key={idx} className="relative w-16 h-16 rounded-lg border border-border overflow-hidden group">
+                      <img src={img} alt={`Image ${idx + 2}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setEditImages(editImages.filter((_, i) => i !== idx))}
+                        className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add new image URL */}
+              <div className="flex gap-2">
+                <Input
+                  id="new-additional-image"
+                  placeholder="Paste image URL and click Add"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const input = e.target as HTMLInputElement;
+                      if (input.value.trim()) {
+                        setEditImages([...editImages, input.value.trim()]);
+                        input.value = "";
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const input = document.getElementById("new-additional-image") as HTMLInputElement;
+                    if (input?.value.trim()) {
+                      setEditImages([...editImages, input.value.trim()]);
+                      input.value = "";
+                    }
+                  }}
+                >
+                  Add
+                </Button>
+                <label className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border bg-secondary text-xs text-muted-foreground cursor-pointer hover:text-foreground hover:bg-accent transition-colors shrink-0">
+                  <Upload className="w-3 h-3" /> Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      files.forEach((file) => {
+                        if (file.size > 5 * 1024 * 1024) return;
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setEditImages((prev) => [...prev, reader.result as string]);
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    }}
+                  />
+                </label>
               </div>
             </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useEffect } from "react";
-import { motion } from "framer-motion";
+import { use, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
@@ -29,6 +29,8 @@ import {
   CheckCircle,
   List,
   ShoppingCart,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -147,63 +149,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Main Product Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Image Column */}
+          {/* Image Gallery Column */}
           <div className="lg:col-span-5">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="sticky top-28"
-            >
-              <div className="relative aspect-square rounded-2xl overflow-hidden border border-border bg-card">
-                {product.image ? (
-                  <Image
-                    src={product.image}
-                    alt={product.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 40vw"
-                    className="object-contain p-4"
-                    priority
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                    <svg className="w-32 h-32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                  </div>
-                )}
-
-                {/* Badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  {product.isFeatured && (
-                    <Badge className="gap-1">
-                      <Sparkles className="w-3 h-3" /> Featured
-                    </Badge>
-                  )}
-                  {product.isTrending && (
-                    <Badge variant="warning" className="gap-1">
-                      <TrendingUp className="w-3 h-3" /> Trending
-                    </Badge>
-                  )}
-                  {discount > 0 && (
-                    <Badge variant="success" className="text-sm font-bold">
-                      {discount}% OFF
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Wishlist button */}
-                <button
-                  onClick={() => toggleWishlist(product.id)}
-                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all hover:scale-110"
-                  aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                >
-                  <Heart
-                    className={`w-5 h-5 transition-colors ${
-                      isWishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground"
-                    }`}
-                  />
-                </button>
-              </div>
+            <ProductImageGallery
+              images={[product.image, ...(product.images || [])].filter(Boolean) as string[]}
+              title={product.title}
+              isFeatured={product.isFeatured}
+              isTrending={product.isTrending}
+              discount={discount}
+              isWishlisted={isWishlisted}
+              onToggleWishlist={() => toggleWishlist(product.id)}
+            />
 
               {/* Action buttons below image on mobile */}
               <div className="flex gap-3 mt-4 lg:hidden">
@@ -217,7 +173,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <Share2 className="w-4 h-4" />
                 </Button>
               </div>
-            </motion.div>
           </div>
 
           {/* Details Column */}
@@ -504,5 +459,249 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         )}
       </div>
     </div>
+  );
+}
+
+
+/* ============================================
+   Product Image Gallery — Amazon-style carousel
+   with thumbnails, arrows, and zoom
+   ============================================ */
+function ProductImageGallery({
+  images,
+  title,
+  isFeatured,
+  isTrending,
+  discount,
+  isWishlisted,
+  onToggleWishlist,
+}: {
+  images: string[];
+  title: string;
+  isFeatured: boolean;
+  isTrending: boolean;
+  discount: number;
+  isWishlisted: boolean;
+  onToggleWishlist: () => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  // Ensure at least one image placeholder
+  const allImages = images.length > 0 ? images : [];
+
+  const goNext = () => {
+    if (allImages.length <= 1) return;
+    setCurrentIndex((prev) => (prev + 1) % allImages.length);
+  };
+
+  const goPrev = () => {
+    if (allImages.length <= 1) return;
+    setCurrentIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+
+  const goToIndex = (idx: number) => {
+    setCurrentIndex(idx);
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "Escape") setIsZoomed(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [allImages.length]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="sticky top-28"
+    >
+      {/* Main Image */}
+      <div
+        className="relative aspect-square rounded-2xl overflow-hidden border border-border bg-card group cursor-zoom-in"
+        onClick={() => allImages.length > 0 && setIsZoomed(true)}
+      >
+        {allImages.length > 0 ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="w-full h-full"
+            >
+              <Image
+                src={allImages[currentIndex]}
+                alt={`${title} - Image ${currentIndex + 1}`}
+                fill
+                sizes="(max-width: 768px) 100vw, 40vw"
+                className="object-contain p-4"
+                priority={currentIndex === 0}
+              />
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+            <svg className="w-32 h-32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </div>
+        )}
+
+        {/* Navigation Arrows */}
+        {allImages.length > 1 && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background/80 border border-border shadow-md flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background/80 border border-border shadow-md flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </>
+        )}
+
+        {/* Image counter */}
+        {allImages.length > 1 && (
+          <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-black/60 text-white text-[10px] font-medium backdrop-blur-sm">
+            {currentIndex + 1} / {allImages.length}
+          </div>
+        )}
+
+        {/* Badges */}
+        <div className="absolute top-4 left-4 flex flex-col gap-2">
+          {isFeatured && (
+            <Badge className="gap-1">
+              <Sparkles className="w-3 h-3" /> Featured
+            </Badge>
+          )}
+          {isTrending && (
+            <Badge variant="warning" className="gap-1">
+              <TrendingUp className="w-3 h-3" /> Trending
+            </Badge>
+          )}
+          {discount > 0 && (
+            <Badge variant="success" className="text-sm font-bold">
+              {discount}% OFF
+            </Badge>
+          )}
+        </div>
+
+        {/* Wishlist button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleWishlist(); }}
+          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all hover:scale-110"
+          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          <Heart
+            className={`w-5 h-5 transition-colors ${
+              isWishlisted ? "fill-red-500 text-red-500" : "text-white"
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Thumbnail Strip */}
+      {allImages.length > 1 && (
+        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-none">
+          {allImages.map((img, idx) => (
+            <button
+              key={idx}
+              onClick={() => goToIndex(idx)}
+              className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden shrink-0 transition-all ${
+                idx === currentIndex
+                  ? "border-primary shadow-md ring-2 ring-primary/20"
+                  : "border-border hover:border-muted-foreground/50 opacity-70 hover:opacity-100"
+              }`}
+            >
+              <Image
+                src={img}
+                alt={`Thumbnail ${idx + 1}`}
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Fullscreen Zoom Modal */}
+      <AnimatePresence>
+        {isZoomed && allImages.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center cursor-zoom-out"
+            onClick={() => setIsZoomed(false)}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setIsZoomed(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 z-10"
+            >
+              ✕
+            </button>
+
+            {/* Navigation in zoom */}
+            {allImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 z-10"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goNext(); }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 z-10"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+
+            {/* Zoomed Image */}
+            <motion.div
+              key={currentIndex}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-[90vw] h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Image
+                src={allImages[currentIndex]}
+                alt={`${title} - Full size ${currentIndex + 1}`}
+                fill
+                sizes="90vw"
+                className="object-contain"
+              />
+            </motion.div>
+
+            {/* Counter */}
+            {allImages.length > 1 && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium">
+                {currentIndex + 1} / {allImages.length}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
