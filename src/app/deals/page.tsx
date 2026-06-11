@@ -44,9 +44,9 @@ export default function DealsPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
           {[
             { icon: Percent, label: "Active Deals", value: topDeals.length.toString(), color: "text-green-400" },
-            { icon: Zap, label: "Flash Sales", value: "Daily", color: "text-yellow-400" },
-            { icon: Clock, label: "Updated", value: "Every Hour", color: "text-blue-400" },
-            { icon: TrendingUp, label: "Avg Savings", value: "30%+", color: "text-purple-400" },
+            { icon: Zap, label: "Max Discount", value: topDeals.length > 0 ? `${Math.round(((topDeals[0].originalPrice! - topDeals[0].price!) / topDeals[0].originalPrice!) * 100)}%` : "0%", color: "text-yellow-400" },
+            { icon: Clock, label: "Under ₹500", value: under500.length.toString(), color: "text-blue-400" },
+            { icon: TrendingUp, label: "Avg Savings", value: topDeals.length > 0 ? `${Math.round(topDeals.reduce((sum, p) => sum + ((p.originalPrice! - p.price!) / p.originalPrice!) * 100, 0) / topDeals.length)}%` : "0%", color: "text-purple-400" },
           ].map((stat) => (
             <div key={stat.label} className="p-4 rounded-2xl bg-card border border-border text-center">
               <stat.icon className={`w-5 h-5 ${stat.color} mx-auto mb-2`} />

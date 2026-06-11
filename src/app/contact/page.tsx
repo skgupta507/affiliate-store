@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { useStore } from "@/store/useStore";
 
 const faqs = [
   {
@@ -57,15 +58,47 @@ export default function ContactPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { success } = useToast();
+  const { success, error: toastError } = useToast();
+  const { createTicket, currentUser, isUserLoggedIn } = useStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    success("Message sent!", "We'll get back to you within 24 hours.");
+    if (!name.trim() || !email.trim() || !message.trim()) return;
+
+    setLoading(true);
+
+    // 1. Create a support ticket in the store
+    createTicket({
+      userId: currentUser?.uid || currentUser?.email || email,
+      userName: name.trim(),
+      subject: subject || "Contact Form Inquiry",
+      message: message.trim(),
+      priority: "medium",
+    });
+
+    // 2. Send email notification (fire and forget)
+    try {
+      await fetch("/api/send-contact-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          subject: subject || "Contact Form Inquiry",
+          message: message.trim(),
+        }),
+      });
+    } catch {
+      // Don't block UX if email fails
+    }
+
+    success("Message sent!", "We've received your message and created a support ticket. We'll get back to you within 24 hours.");
     setSubmitted(true);
     setName(""); setEmail(""); setSubject(""); setMessage("");
-    setTimeout(() => setSubmitted(false), 5000);
+    setLoading(false);
+    setTimeout(() => setSubmitted(false), 8000);
   };
 
   return (
@@ -239,8 +272,8 @@ export default function ContactPage() {
                         className="flex w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all resize-none"
                       />
                     </div>
-                    <Button type="submit" size="lg" className="w-full gap-2">
-                      <Send className="w-4 h-4" /> Send Message
+                    <Button type="submit" size="lg" className="w-full gap-2" disabled={loading}>
+                      <Send className="w-4 h-4" /> {loading ? "Sending..." : "Send Message"}
                     </Button>
                     <p className="text-xs text-muted-foreground text-center">
                       Or email us directly at <a href="mailto:support@theideadecorator.in" className="text-primary hover:underline">support@theideadecorator.in</a>

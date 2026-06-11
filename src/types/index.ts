@@ -274,3 +274,16 @@ export interface FAQ {
   category: string;
   order: number;
 }
+
+export interface ProductQuestion {
+  id: string;
+  productId: string;
+  userId: string;
+  userName: string;
+  question: string;
+  answer?: string;
+  answeredBy?: string;
+  answeredAt?: string;
+  upvotes: number;
+  createdAt: string;
+}

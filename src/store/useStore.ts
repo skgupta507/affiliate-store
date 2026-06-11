@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Product, Category, ThemeMode, User, Watchlist, CartItem, Order, Address, Coupon, Review, BlogPost, Notification, SupportTicket, TicketReply, LoyaltyTier, FAQ } from "@/types";
+import { Product, Category, ThemeMode, User, Watchlist, CartItem, Order, Address, Coupon, Review, BlogPost, Notification, SupportTicket, TicketReply, LoyaltyTier, FAQ, ProductQuestion } from "@/types";
 import { generateId } from "@/lib/utils";
 
 interface AppState {
@@ -130,6 +130,12 @@ interface AppState {
   priceAlerts: { productId: string; targetPrice: number }[];
   addPriceAlert: (productId: string, targetPrice: number) => void;
   removePriceAlert: (productId: string) => void;
+
+  // Product Q&A
+  productQuestions: ProductQuestion[];
+  askQuestion: (productId: string, question: string) => void;
+  answerQuestion: (questionId: string, answer: string) => void;
+  upvoteQuestion: (questionId: string) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -416,7 +422,59 @@ export const useStore = create<AppState>()(
       },
 
       // Blog
-      blogPosts: [],
+      blogPosts: [
+        {
+          id: "blog-1",
+          title: "10 Living Room Decor Ideas That Transform Your Space",
+          slug: "10-living-room-decor-ideas",
+          excerpt: "Discover easy and affordable ways to elevate your living room with these trending decor ideas for 2025. From accent walls to statement lighting.",
+          content: "Your living room is the heart of your home — it's where you relax, entertain, and make memories. Here are 10 ideas to transform it:\n\n1. **Statement Wall Art** — A large canvas or gallery wall instantly adds personality. Mix sizes and frames for an eclectic look.\n\n2. **Layer Your Lighting** — Combine ambient, task, and accent lighting. Floor lamps, table lamps, and fairy lights create warmth.\n\n3. **Add Texture with Throws** — Chunky knit blankets, velvet cushions, and woven rugs add depth and coziness.\n\n4. **Greenery & Planters** — Indoor plants purify air and add life. Try snake plants, pothos, or a fiddle leaf fig.\n\n5. **Mirrors for Space** — Large mirrors reflect light and make rooms feel bigger. Lean an oversized mirror against the wall for a modern look.\n\n6. **Color Accent Cushions** — Swap cushion covers seasonally. Mustard, teal, and terracotta are trending.\n\n7. **Coffee Table Styling** — Stack books, add a candle, a small plant, and a decorative tray.\n\n8. **Curtains that Flow** — Floor-to-ceiling curtains make ceilings look higher. Choose light fabrics for a breezy feel.\n\n9. **Minimalist Shelving** — Floating shelves display your personality without clutter.\n\n10. **Scented Candles** — Create ambiance with fragrances like sandalwood, vanilla, or lavender.",
+          coverImage: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800",
+          author: "TheIdeaDecorator",
+          category: "Home Decor Tips",
+          tags: ["living room", "decor", "interior design", "2025 trends"],
+          publishedAt: "2025-05-15T10:00:00Z",
+          updatedAt: "2025-05-15T10:00:00Z",
+          readTime: 5,
+          isPublished: true,
+          relatedProducts: [],
+          views: 234,
+        },
+        {
+          id: "blog-2",
+          title: "How to Choose the Perfect Lighting for Every Room",
+          slug: "choose-perfect-lighting-every-room",
+          excerpt: "Lighting can make or break a room's ambiance. Learn the 3-layer lighting technique used by interior designers to create the perfect mood.",
+          content: "Good lighting is the unsung hero of interior design. Here's how to get it right:\n\n**The 3-Layer Approach:**\n\n1. **Ambient Lighting** — The main source of light in a room. Ceiling fixtures, recessed lights, or chandeliers.\n\n2. **Task Lighting** — Focused light for specific activities. Desk lamps, reading lights, under-cabinet kitchen lights.\n\n3. **Accent Lighting** — Decorative highlights. LED strips, picture lights, fairy lights, candles.\n\n**Room-by-Room Guide:**\n\n• **Living Room** — A mix of all three layers. Dimmer switches are a game-changer.\n• **Bedroom** — Warm, soft ambient light. Bedside lamps for reading. Avoid harsh overhead lights.\n• **Kitchen** — Bright task lighting over counters. Pendant lights over islands for style.\n• **Bathroom** — Even lighting around mirrors for grooming. Warm tones for relaxation.\n\n**Pro Tips:**\n- Use warm white (2700K–3000K) for living spaces\n- Cool white (4000K) for kitchens and work areas\n- Always have multiple light sources in a room\n- Smart bulbs let you change color temperature throughout the day",
+          coverImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800",
+          author: "TheIdeaDecorator",
+          category: "Guides",
+          tags: ["lighting", "interior design", "home improvement", "tips"],
+          publishedAt: "2025-04-28T10:00:00Z",
+          updatedAt: "2025-04-28T10:00:00Z",
+          readTime: 4,
+          isPublished: true,
+          relatedProducts: [],
+          views: 189,
+        },
+        {
+          id: "blog-3",
+          title: "Small Space? 8 Smart Storage Solutions for Indian Homes",
+          slug: "smart-storage-solutions-indian-homes",
+          excerpt: "Maximize every inch of your home with these clever storage hacks designed for compact Indian apartments and houses.",
+          content: "Living in a compact space doesn't mean living with clutter. Here are 8 storage solutions perfect for Indian homes:\n\n1. **Vertical Wall Shelves** — Go up, not out. Tall bookshelves and floating shelves use wall space efficiently.\n\n2. **Ottoman Storage** — Seating that doubles as storage. Perfect for blankets, magazines, or kids' toys.\n\n3. **Under-Bed Drawers** — The space under your bed is prime real estate. Use fabric boxes or rolling drawers.\n\n4. **Door-Back Organizers** — Hang organizers behind doors for shoes, accessories, cleaning supplies.\n\n5. **Multi-Function Furniture** — Sofa-cum-beds, folding dining tables, and nesting tables save space.\n\n6. **Kitchen Wall Racks** — Magnetic knife strips, hanging pot racks, and pegboards free up counter space.\n\n7. **Bathroom Corner Shelves** — Maximize dead corner space with tiered corner shelving.\n\n8. **Pooja Room Cabinets** — Enclosed pooja units with storage below keep items organized and dust-free.\n\n**Bonus Tip:** Use matching containers and labels to make storage look intentional, not cluttered.",
+          coverImage: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800",
+          author: "TheIdeaDecorator",
+          category: "Home Decor Tips",
+          tags: ["storage", "small spaces", "organization", "indian homes"],
+          publishedAt: "2025-04-10T10:00:00Z",
+          updatedAt: "2025-04-10T10:00:00Z",
+          readTime: 4,
+          isPublished: true,
+          relatedProducts: [],
+          views: 312,
+        },
+      ],
       addBlogPost: (post) =>
         set((state) => ({ blogPosts: [...state.blogPosts, post] })),
       updateBlogPost: (id, updates) =>
@@ -537,6 +595,36 @@ export const useStore = create<AppState>()(
         set((state) => ({
           priceAlerts: state.priceAlerts.filter((a) => a.productId !== productId),
         })),
+
+      // Product Q&A
+      productQuestions: [],
+      askQuestion: (productId, question) =>
+        set((state) => ({
+          productQuestions: [
+            {
+              id: generateId(),
+              productId,
+              userId: state.currentUser?.uid || state.currentUser?.email || "anonymous",
+              userName: state.currentUser?.displayName || "Anonymous",
+              question,
+              upvotes: 0,
+              createdAt: new Date().toISOString(),
+            },
+            ...state.productQuestions,
+          ],
+        })),
+      answerQuestion: (questionId, answer) =>
+        set((state) => ({
+          productQuestions: state.productQuestions.map((q) =>
+            q.id === questionId ? { ...q, answer, answeredBy: "TheIdeaDecorator", answeredAt: new Date().toISOString() } : q
+          ),
+        })),
+      upvoteQuestion: (questionId) =>
+        set((state) => ({
+          productQuestions: state.productQuestions.map((q) =>
+            q.id === questionId ? { ...q, upvotes: q.upvotes + 1 } : q
+          ),
+        })),
     }),
     {
       name: "theideadecorator-store",
@@ -562,6 +650,7 @@ export const useStore = create<AppState>()(
         faqs: state.faqs,
         priceAlerts: state.priceAlerts,
         appliedCoupon: state.appliedCoupon,
+        productQuestions: state.productQuestions,
       }),
     }
   )

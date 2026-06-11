@@ -11,6 +11,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { formatPrice, getRelativeTime } from "@/lib/utils";
 import { ReviewSection } from "@/components/products/ReviewSection";
+import { ProductQA } from "@/components/products/ProductQA";
+import { DeliveryEstimator } from "@/components/products/DeliveryEstimator";
+import { StickyCartBar } from "@/components/products/StickyCartBar";
 import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/SEO";
 import {
   ArrowLeft,
@@ -290,6 +293,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 )}
               </div>
 
+              {/* Delivery Estimator */}
+              <DeliveryEstimator isAffiliate={!!isAffiliate} />
+
               {/* Description */}
               <div>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-3">Description</h3>
@@ -418,6 +424,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           />
         </section>
 
+        {/* Q&A Section */}
+        <section className="mt-16">
+          <ProductQA productId={product.id} />
+        </section>
+
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <section className="mt-16">
@@ -458,6 +469,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </section>
         )}
       </div>
+
+      {/* Sticky Add-to-Cart Bar */}
+      <StickyCartBar
+        title={product.title}
+        price={product.price}
+        originalPrice={product.originalPrice}
+        image={product.image}
+        isAffiliate={!!isAffiliate}
+        isInCart={isInCart}
+        isWishlisted={isWishlisted}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+        onToggleWishlist={() => toggleWishlist(product.id)}
+      />
     </div>
   );
 }

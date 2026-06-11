@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useStore } from "@/store/useStore";
 import {
   Home,
@@ -29,26 +30,26 @@ import {
 } from "lucide-react";
 
 const categoryIcons: Record<string, React.ReactNode> = {
-  "Living Room": <Home className="w-6 h-6" />,
-  "Bedroom": <Bed className="w-6 h-6" />,
-  "Kitchen & Dining": <ChefHat className="w-6 h-6" />,
-  "Bathroom": <Droplets className="w-6 h-6" />,
-  "Wall Art & Decor": <Frame className="w-6 h-6" />,
-  "Lighting": <Lamp className="w-6 h-6" />,
-  "Furniture": <Armchair className="w-6 h-6" />,
-  "Rugs & Carpets": <Layers className="w-6 h-6" />,
-  "Curtains & Blinds": <Blinds className="w-6 h-6" />,
-  "Cushions & Throws": <Heart className="w-6 h-6" />,
-  "Vases & Planters": <Flower2 className="w-6 h-6" />,
-  "Candles & Fragrances": <Flame className="w-6 h-6" />,
-  "Mirrors": <Circle className="w-6 h-6" />,
-  "Clocks": <Clock className="w-6 h-6" />,
-  "Storage & Organization": <Archive className="w-6 h-6" />,
-  "Outdoor & Garden": <TreePine className="w-6 h-6" />,
-  "Bedding & Linen": <Shirt className="w-6 h-6" />,
-  "Table Decor": <Coffee className="w-6 h-6" />,
-  "Shelves & Racks": <BookOpen className="w-6 h-6" />,
-  "Electronics": <Laptop className="w-6 h-6" />,
+  "Living Room": <Home className="w-5 h-5" />,
+  "Bedroom": <Bed className="w-5 h-5" />,
+  "Kitchen & Dining": <ChefHat className="w-5 h-5" />,
+  "Bathroom": <Droplets className="w-5 h-5" />,
+  "Wall Art & Decor": <Frame className="w-5 h-5" />,
+  "Lighting": <Lamp className="w-5 h-5" />,
+  "Furniture": <Armchair className="w-5 h-5" />,
+  "Rugs & Carpets": <Layers className="w-5 h-5" />,
+  "Curtains & Blinds": <Blinds className="w-5 h-5" />,
+  "Cushions & Throws": <Heart className="w-5 h-5" />,
+  "Vases & Planters": <Flower2 className="w-5 h-5" />,
+  "Candles & Fragrances": <Flame className="w-5 h-5" />,
+  "Mirrors": <Circle className="w-5 h-5" />,
+  "Clocks": <Clock className="w-5 h-5" />,
+  "Storage & Organization": <Archive className="w-5 h-5" />,
+  "Outdoor & Garden": <TreePine className="w-5 h-5" />,
+  "Bedding & Linen": <Shirt className="w-5 h-5" />,
+  "Table Decor": <Coffee className="w-5 h-5" />,
+  "Shelves & Racks": <BookOpen className="w-5 h-5" />,
+  "Electronics": <Laptop className="w-5 h-5" />,
 };
 
 const categoryColors = [
@@ -83,11 +84,14 @@ export default function CategoriesPage() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {categories.map((category, index) => {
             const productCount = products.filter(
               (p) => p.category === category.name
             ).length;
+            // Get a sample product image for the category
+            const sampleProduct = products.find((p) => p.category === category.name && p.image);
+            const categoryImage = category.image || sampleProduct?.image;
 
             return (
               <motion.div
@@ -97,25 +101,75 @@ export default function CategoriesPage() {
                 transition={{ delay: index * 0.03 }}
               >
                 <Link href={`/products?category=${category.name}`}>
-                  <div className="group p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer">
-                    <div
-                      className={`w-10 h-10 rounded-lg ${categoryColors[index % categoryColors.length]} flex items-center justify-center mb-3`}
-                    >
-                      {categoryIcons[category.name] || <Sparkles className="w-5 h-5" />}
-                    </div>
+                  <div className="group rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all cursor-pointer overflow-hidden">
+                    {/* Category Image */}
+                    {categoryImage ? (
+                      <div className="relative aspect-[4/3] bg-secondary overflow-hidden">
+                        <Image
+                          src={categoryImage}
+                          alt={category.name}
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <h3 className="text-sm font-bold text-white drop-shadow-sm">{category.name}</h3>
+                          <p className="text-[10px] text-white/80">{productCount} products</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4">
+                        <div
+                          className={`w-10 h-10 rounded-lg ${categoryColors[index % categoryColors.length]} flex items-center justify-center mb-3`}
+                        >
+                          {categoryIcons[category.name] || <Sparkles className="w-5 h-5" />}
+                        </div>
+                        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {category.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {productCount} {productCount === 1 ? "product" : "products"}
+                        </p>
+                      </div>
+                    )}
 
-                    <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {productCount} {productCount === 1 ? "product" : "products"}
-                    </p>
+                    {/* Bottom bar for image cards */}
+                    {!categoryImage && (
+                      <div className="px-4 pb-3 pt-0 flex items-center justify-between">
+                        <span className="text-[10px] text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                          Shop Now <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </Link>
               </motion.div>
             );
           })}
         </div>
+
+        {/* Featured Categories Banner */}
+        {products.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-12 p-6 rounded-2xl bg-gradient-to-r from-primary/10 to-amber-500/10 border border-border"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Can't decide?</h2>
+                <p className="text-sm text-muted-foreground">Browse all {products.length} products across all categories.</p>
+              </div>
+              <Link href="/products">
+                <button className="h-9 rounded-lg bg-primary px-5 font-semibold text-sm text-primary-foreground hover:scale-[1.02] transition-all flex items-center gap-1.5 shrink-0">
+                  View All Products <ArrowRight className="w-4 h-4" />
+                </button>
+              </Link>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );
