@@ -179,6 +179,27 @@ export default function CartPage() {
             <div className="sticky top-28 p-6 rounded-2xl border border-border bg-card backdrop-blur-sm space-y-4">
               <h2 className="text-lg font-bold text-foreground">Order Summary</h2>
 
+              {/* Free Shipping Progress Bar */}
+              {subtotal < 499 && (
+                <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                      Add {formatPrice(499 - subtotal)} more for FREE shipping!
+                    </span>
+                    <Truck className="w-3.5 h-3.5 text-amber-500" />
+                  </div>
+                  <div className="h-1.5 rounded-full bg-amber-500/20 overflow-hidden">
+                    <div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${Math.min((subtotal / 499) * 100, 100)}%` }} />
+                  </div>
+                </div>
+              )}
+              {subtotal >= 499 && (
+                <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20 flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-green-500" />
+                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">🎉 You qualify for FREE shipping!</span>
+                </div>
+              )}
+
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal ({cartItems.length} items)</span>

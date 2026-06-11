@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Sparkles, Zap, Star, ShoppingCart, Truck, RotateCcw, Shield, Clock, ChevronRight, ExternalLink, Heart, Check, Search } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Star, ShoppingCart, Truck, RotateCcw, Shield, Clock, ChevronRight, ChevronLeft, ExternalLink, Heart, Check, Search, Flame } from "lucide-react";
 import { useStore } from "@/store/useStore";
 import { formatPrice } from "@/lib/utils";
 import { Product } from "@/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRecommendations } from "@/components/products/Recommendations";
 import { OrganizationJsonLd } from "@/components/SEO";
+import { CountdownTimer } from "@/components/CountdownTimer";
 
 export default function HomePage() {
   const { products, categories, recentlyViewed } = useStore();
   const [activeTab, setActiveTab] = useState<"new" | "trending" | "toprated">("new");
+  const [heroSlide, setHeroSlide] = useState(0);
   const { personalizedPicks } = useRecommendations();
 
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 14);
@@ -33,8 +35,29 @@ export default function HomePage() {
     .sort((a, b) => (b.rating || 0) - (a.rating || 0))
     .slice(0, 14);
   const recentlyViewedProducts = products.filter((p) => recentlyViewed.includes(p.id)).slice(0, 7);
+  const bestSellers = [...products]
+    .sort((a, b) => (b.purchaseCount || 0) + b.clicks - ((a.purchaseCount || 0) + a.clicks))
+    .slice(0, 7);
+
+  // Top 3 categories with products for category rows
+  const topCategories = categories
+    .map((cat) => ({ ...cat, products: products.filter((p) => p.category === cat.name) }))
+    .filter((cat) => cat.products.length >= 3)
+    .slice(0, 3);
 
   const tabProducts = activeTab === "new" ? recentProducts : activeTab === "trending" ? trendingProducts : topRated;
+
+  // Hero carousel auto-rotate
+  const heroSlides = [
+    { title: "Transform Your Space\nwith Beautiful Decor", subtitle: "Trending Collection", cta: "Shop Now", price: "Starting at ₹299", href: "/products", color: "from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30" },
+    { title: "Up to 50% Off\non Lighting & Lamps", subtitle: "Flash Sale", cta: "Shop Deals", price: "Limited time only", href: "/deals", color: "from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30" },
+    { title: "New Arrivals\nWall Art Collection", subtitle: "Just Launched", cta: "Explore", price: "Handcrafted pieces", href: "/products?category=Wall+Art+%26+Decor", color: "from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30" },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => setHeroSlide((s) => (s + 1) % heroSlides.length), 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div>
@@ -101,22 +124,40 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Main Banner */}
+          {/* Main Banner Carousel */}
           <div>
-            <div className="relative rounded-lg overflow-hidden bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-border h-[180px] sm:h-[240px]">
-              <div className="absolute inset-0 flex items-center px-6 sm:px-10">
-                <div>
-                  <p className="text-primary font-semibold text-xs mb-1">Trending Collection</p>
-                  <h1 className="text-xl sm:text-3xl font-bold text-foreground leading-tight mb-2">
-                    Transform Your Space<br />with Beautiful Decor
-                  </h1>
-                  <p className="text-muted-foreground text-xs mb-3">Starting at ₹299</p>
-                  <Link href="/products">
-                    <button className="h-8 rounded-md bg-primary px-4 font-semibold text-xs text-primary-foreground shadow-[0_4px_12px_var(--glow-primary)] hover:scale-[1.02] transition-all flex items-center gap-1.5">
-                      Shop Now <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </Link>
+            <div className="relative rounded-lg overflow-hidden border border-border h-[180px] sm:h-[240px]">
+              {heroSlides.map((slide, i) => (
+                <div
+                  key={i}
+                  className={`absolute inset-0 flex items-center px-6 sm:px-10 bg-gradient-to-r ${slide.color} transition-opacity duration-500 ${i === heroSlide ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                >
+                  <div>
+                    <p className="text-primary font-semibold text-xs mb-1">{slide.subtitle}</p>
+                    <h1 className="text-xl sm:text-3xl font-bold text-foreground leading-tight mb-2 whitespace-pre-line">
+                      {slide.title}
+                    </h1>
+                    <p className="text-muted-foreground text-xs mb-3">{slide.price}</p>
+                    <Link href={slide.href}>
+                      <button className="h-8 rounded-md bg-primary px-4 font-semibold text-xs text-primary-foreground shadow-[0_4px_12px_var(--glow-primary)] hover:scale-[1.02] transition-all flex items-center gap-1.5">
+                        {slide.cta} <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </Link>
+                  </div>
                 </div>
+              ))}
+              {/* Carousel Controls */}
+              <button onClick={() => setHeroSlide((s) => (s - 1 + heroSlides.length) % heroSlides.length)} className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/70 border border-border flex items-center justify-center text-foreground opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button onClick={() => setHeroSlide((s) => (s + 1) % heroSlides.length)} className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/70 border border-border flex items-center justify-center text-foreground opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              {/* Dots */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {heroSlides.map((_, i) => (
+                  <button key={i} onClick={() => setHeroSlide(i)} className={`w-2 h-2 rounded-full transition-all ${i === heroSlide ? "bg-primary w-5" : "bg-foreground/30"}`} />
+                ))}
               </div>
             </div>
             {/* Mini banners */}
@@ -169,6 +210,33 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Flash Sale Countdown */}
+      {topDeals.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 py-3">
+          <div className="max-w-7xl mx-auto">
+            <div className="p-4 rounded-xl bg-gradient-to-r from-red-500/10 to-amber-500/10 border border-red-500/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <Flame className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Flash Sale — Ends Today!</p>
+                  <p className="text-[10px] text-muted-foreground">Up to {topDeals[0] && topDeals[0].originalPrice && topDeals[0].price ? Math.round(((topDeals[0].originalPrice - topDeals[0].price) / topDeals[0].originalPrice) * 100) : 50}% off on top picks</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <CountdownTimer />
+                <Link href="/deals">
+                  <button className="h-8 rounded-md bg-red-500 px-4 font-semibold text-xs text-white hover:scale-[1.02] transition-all flex items-center gap-1.5">
+                    View Deals <ArrowRight className="w-3 h-3" />
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Deal of the Day - 7 per row grid */}
       {topDeals.length > 0 && (
         <GridSection title="Deal of the Day" icon={<Zap className="w-3.5 h-3.5 text-amber-500" />} link="/deals">
@@ -209,6 +277,34 @@ export default function HomePage() {
         <GridSection title="Featured" icon={<Sparkles className="w-3.5 h-3.5 text-primary" />} link="/products?filter=featured">
           {featuredProducts.map((p) => <MiniProductCard key={p.id} product={p} />)}
         </GridSection>
+      )}
+
+      {/* Best Sellers */}
+      {bestSellers.length > 0 && (
+        <GridSection title="Best Sellers" icon={<Star className="w-3.5 h-3.5 text-amber-500" />} link="/products">
+          {bestSellers.map((p) => <MiniProductCard key={p.id} product={p} />)}
+        </GridSection>
+      )}
+
+      {/* Category Product Rows */}
+      {topCategories.map((cat) => (
+        <GridSection key={cat.id} title={`Top in ${cat.name}`} icon={<Sparkles className="w-3.5 h-3.5 text-primary" />} link={`/products?category=${cat.name}`}>
+          {cat.products.slice(0, 7).map((p) => <MiniProductCard key={p.id} product={p} />)}
+        </GridSection>
+      ))}
+
+      {/* Brands We Source From */}
+      {products.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-7xl mx-auto">
+            <p className="text-center text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wide">Trusted Brands & Platforms</p>
+            <div className="flex items-center justify-center gap-6 sm:gap-10 flex-wrap opacity-60">
+              {["Amazon", "Flipkart", "Myntra", "Ajio", "Meesho", "Pepperfry"].map((brand) => (
+                <span key={brand} className="text-sm sm:text-base font-bold text-muted-foreground">{brand}</span>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
       {/* Recently Viewed - 7 per row grid */}

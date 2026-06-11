@@ -5,6 +5,7 @@ import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { ToastContainer } from "./ToastContainer";
 import { WhatsAppButton } from "./WhatsAppButton";
+import { BackToTop } from "./BackToTop";
 import { FirestoreSync } from "@/components/FirestoreSync";
 import { UserDataSync } from "@/components/UserDataSync";
 import { useEffect } from "react";
@@ -25,6 +26,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <main className="pt-16 min-h-screen">{children}</main>
       <Footer />
       <WhatsAppButton />
+      <BackToTop />
       <ToastContainer />
     </div>
   );

@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { useToast } from "@/components/ui/toast";
+import { formatPrice } from "@/lib/utils";
 
 export default function ProfilePage() {
   const {
@@ -154,6 +155,26 @@ export default function ProfilePage() {
             <LogOut className="w-4 h-4" /> Logout
           </Button>
         </motion.div>
+
+        {/* Account Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          <div className="p-3 rounded-xl bg-card border border-border text-center">
+            <p className="text-lg font-bold text-foreground">{orders.length}</p>
+            <p className="text-[10px] text-muted-foreground">Total Orders</p>
+          </div>
+          <div className="p-3 rounded-xl bg-card border border-border text-center">
+            <p className="text-lg font-bold text-foreground">{formatPrice(currentUser?.totalSpent || 0)}</p>
+            <p className="text-[10px] text-muted-foreground">Total Spent</p>
+          </div>
+          <div className="p-3 rounded-xl bg-card border border-border text-center">
+            <p className="text-lg font-bold text-foreground">{currentUser?.loyaltyPoints || 0}</p>
+            <p className="text-[10px] text-muted-foreground">Loyalty Points</p>
+          </div>
+          <div className="p-3 rounded-xl bg-card border border-border text-center">
+            <p className="text-lg font-bold text-foreground">{wishlist.length}</p>
+            <p className="text-[10px] text-muted-foreground">Wishlist Items</p>
+          </div>
+        </div>
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-8 p-1 rounded-2xl bg-card border border-border">
