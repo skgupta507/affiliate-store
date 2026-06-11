@@ -128,7 +128,37 @@ export default function AboutPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="mt-12 p-6 rounded-2xl border border-amber-500/20 bg-amber-500/5"
+          className="mt-12 p-6 rounded-2xl border border-border bg-card text-center"
+        >
+          <h2 className="text-lg font-bold text-foreground mb-4">Connect With Us</h2>
+          <p className="text-sm text-muted-foreground mb-5">Follow us on social media for decor inspiration, new arrivals, and exclusive deals.</p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            {[
+              { href: "https://www.instagram.com/theideadecorator", label: "Instagram", color: "hover:bg-pink-500/10 hover:text-pink-500 hover:border-pink-500/30" },
+              { href: "https://www.facebook.com/theideadecorator", label: "Facebook", color: "hover:bg-blue-500/10 hover:text-blue-500 hover:border-blue-500/30" },
+              { href: "https://twitter.com/ideadecorator", label: "X (Twitter)", color: "hover:bg-foreground/10 hover:text-foreground hover:border-foreground/30" },
+              { href: "https://www.pinterest.com/theideadecorator", label: "Pinterest", color: "hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30" },
+              { href: "https://www.youtube.com/@theideadecorator", label: "YouTube", color: "hover:bg-red-600/10 hover:text-red-600 hover:border-red-500/30" },
+              { href: "https://wa.me/917892430507?text=Hi%2C%20I%20need%20help", label: "WhatsApp", color: "hover:bg-green-500/10 hover:text-green-500 hover:border-green-500/30" },
+            ].map((social) => (
+              <a
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground transition-all ${social.color}`}
+              >
+                {social.label}
+              </a>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="mt-6 p-6 rounded-2xl border border-amber-500/20 bg-amber-500/5"
         >
           <p className="text-sm text-amber-700 dark:text-amber-300 text-center">
             <strong className="text-amber-600 dark:text-amber-400">Disclosure:</strong> TheIdeaDecorator contains both direct-sell products and affiliate links. When you purchase through affiliate links, we may earn a small commission at no extra cost to you. This helps us maintain and improve the platform.

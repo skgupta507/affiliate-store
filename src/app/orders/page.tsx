@@ -106,54 +106,121 @@ function OrdersContent() {
       year: "numeric", month: "long", day: "numeric",
     });
 
-    const itemRows = order.items.map((item) => `
+    const estimatedDelivery = order.estimatedDelivery
+      ? new Date(order.estimatedDelivery).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })
+      : "3-5 business days";
+
+    const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const deliveryFee = subtotal > 499 ? 0 : 49;
+    const couponDiscount = order.couponDiscount || 0;
+
+    const itemRows = order.items.map((item, idx) => `
       <tr>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px;">${item.title}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; text-align: center;">${item.quantity}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; text-align: right;">₹${item.price.toLocaleString("en-IN")}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; text-align: right;">₹${(item.price * item.quantity).toLocaleString("en-IN")}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #333;">${idx + 1}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #333;">${item.title}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #333; text-align: center;">${item.quantity}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #333; text-align: right;">₹${item.price.toLocaleString("en-IN")}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #333; text-align: right; font-weight: 600;">₹${(item.price * item.quantity).toLocaleString("en-IN")}</td>
       </tr>
     `).join("");
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice #${order.id.slice(0, 8).toUpperCase()}</title></head>
-    <body style="margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;">
-      <div style="max-width:700px;margin:0 auto;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #c2410c;">
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice #${order.id.slice(0, 8).toUpperCase()} — TheIdeaDecorator</title>
+    <style>
+      @media print { .no-print { display: none !important; } body { padding: 0; } }
+      body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fff; color: #333; }
+    </style>
+    </head>
+    <body>
+      <div style="max-width:750px;margin:0 auto;">
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px;padding-bottom:20px;border-bottom:3px solid #c2410c;">
           <div>
-            <h1 style="margin:0;font-size:24px;color:#c2410c;">TheIdeaDecorator</h1>
-            <p style="margin:4px 0 0;font-size:12px;color:#666;">Tax Invoice</p>
+            <h1 style="margin:0;font-size:26px;color:#c2410c;font-weight:800;">TheIdeaDecorator</h1>
+            <p style="margin:4px 0 0;font-size:11px;color:#888;">Shop Smart, Live Beautiful</p>
+            <p style="margin:10px 0 0;font-size:11px;color:#666;line-height:1.5;">
+              #541, Vidyasagar Saraiplaya<br>
+              Thanisandra Main Road, Dr. SRK Nagar Post<br>
+              Bangalore – 560077, Karnataka, India<br>
+              Email: support@theideadecorator.in | Phone: +91 7892430507
+            </p>
           </div>
           <div style="text-align:right;">
-            <p style="margin:0;font-size:14px;font-weight:600;">Invoice #${order.id.slice(0, 8).toUpperCase()}</p>
-            <p style="margin:4px 0 0;font-size:12px;color:#666;">${orderDate}</p>
+            <p style="margin:0;font-size:20px;font-weight:700;color:#333;">TAX INVOICE</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#555;">Invoice No: <strong>#${order.id.slice(0, 8).toUpperCase()}</strong></p>
+            <p style="margin:3px 0 0;font-size:12px;color:#666;">Date: ${orderDate}</p>
+            <p style="margin:3px 0 0;font-size:12px;color:#666;">Order ID: ${order.id.slice(0, 12).toUpperCase()}</p>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;">
-          <div>
-            <p style="font-size:11px;color:#666;margin:0 0 6px;font-weight:600;">BILL TO:</p>
-            <p style="font-size:14px;margin:0;line-height:1.5;">${order.shippingAddress.fullName}<br>${order.shippingAddress.addressLine1}<br>${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.pincode}<br>Phone: ${order.shippingAddress.phone}</p>
+
+        <!-- Customer & Order Info -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:30px;">
+          <div style="padding:16px;background:#f9fafb;border-radius:8px;">
+            <p style="font-size:10px;color:#888;margin:0 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Bill To / Ship To</p>
+            <p style="font-size:14px;margin:0;font-weight:600;color:#333;">${order.shippingAddress.fullName}</p>
+            <p style="font-size:12px;margin:5px 0 0;color:#555;line-height:1.6;">
+              ${order.shippingAddress.addressLine1}${order.shippingAddress.addressLine2 ? ", " + order.shippingAddress.addressLine2 : ""}<br>
+              ${order.shippingAddress.city}, ${order.shippingAddress.state} – ${order.shippingAddress.pincode}<br>
+              ${order.shippingAddress.country || "India"}
+            </p>
+            <p style="font-size:12px;margin:8px 0 0;color:#555;">📞 ${order.shippingAddress.phone}</p>
           </div>
-          <div style="text-align:right;">
-            <p style="font-size:11px;color:#666;margin:0 0 6px;font-weight:600;">PAYMENT:</p>
-            <p style="font-size:14px;margin:0;text-transform:uppercase;">${order.paymentMethod}</p>
-            <p style="font-size:12px;color:#666;margin:4px 0 0;">Status: ${order.paymentStatus}</p>
+          <div style="padding:16px;background:#f9fafb;border-radius:8px;">
+            <p style="font-size:10px;color:#888;margin:0 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Order Details</p>
+            <table style="width:100%;font-size:12px;color:#555;">
+              <tr><td style="padding:3px 0;">Order Status</td><td style="padding:3px 0;text-align:right;font-weight:600;text-transform:capitalize;">${order.status}</td></tr>
+              <tr><td style="padding:3px 0;">Payment Method</td><td style="padding:3px 0;text-align:right;font-weight:600;text-transform:uppercase;">${order.paymentMethod}</td></tr>
+              <tr><td style="padding:3px 0;">Payment Status</td><td style="padding:3px 0;text-align:right;font-weight:600;text-transform:capitalize;color:${order.paymentStatus === "paid" ? "#16a34a" : "#eab308"}">${order.paymentStatus}</td></tr>
+              ${order.trackingNumber ? `<tr><td style="padding:3px 0;">Tracking No.</td><td style="padding:3px 0;text-align:right;font-weight:600;font-family:monospace;">${order.trackingNumber}</td></tr>` : ""}
+              <tr><td style="padding:3px 0;">Est. Delivery</td><td style="padding:3px 0;text-align:right;font-weight:600;">${estimatedDelivery}</td></tr>
+              ${order.couponCode ? `<tr><td style="padding:3px 0;">Coupon Used</td><td style="padding:3px 0;text-align:right;font-weight:600;color:#c2410c;">${order.couponCode}</td></tr>` : ""}
+            </table>
           </div>
         </div>
+
+        <!-- Items Table -->
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-          <thead><tr style="background:#f9fafb;">
-            <th style="padding:10px 12px;text-align:left;font-size:12px;color:#666;">Item</th>
-            <th style="padding:10px 12px;text-align:center;font-size:12px;color:#666;">Qty</th>
-            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#666;">Price</th>
-            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#666;">Total</th>
-          </tr></thead>
+          <thead>
+            <tr style="background:#1f2937;color:white;">
+              <th style="padding:12px;text-align:left;font-size:11px;font-weight:600;border-radius:6px 0 0 0;">#</th>
+              <th style="padding:12px;text-align:left;font-size:11px;font-weight:600;">Product</th>
+              <th style="padding:12px;text-align:center;font-size:11px;font-weight:600;">Qty</th>
+              <th style="padding:12px;text-align:right;font-size:11px;font-weight:600;">Unit Price</th>
+              <th style="padding:12px;text-align:right;font-size:11px;font-weight:600;border-radius:0 6px 0 0;">Amount</th>
+            </tr>
+          </thead>
           <tbody>${itemRows}</tbody>
         </table>
-        <div style="text-align:right;border-top:2px solid #c2410c;padding-top:15px;">
-          <p style="font-size:20px;color:#c2410c;margin:0;font-weight:700;">Total: ₹${order.totalAmount.toLocaleString("en-IN")}</p>
+
+        <!-- Totals -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:30px;">
+          <table style="width:280px;font-size:13px;">
+            <tr><td style="padding:6px 0;color:#666;">Subtotal</td><td style="padding:6px 0;text-align:right;color:#333;">₹${subtotal.toLocaleString("en-IN")}</td></tr>
+            <tr><td style="padding:6px 0;color:#666;">Delivery Fee</td><td style="padding:6px 0;text-align:right;color:${deliveryFee === 0 ? "#16a34a" : "#333"}">${deliveryFee === 0 ? "FREE" : "₹" + deliveryFee}</td></tr>
+            ${couponDiscount > 0 ? `<tr><td style="padding:6px 0;color:#16a34a;">Coupon Discount</td><td style="padding:6px 0;text-align:right;color:#16a34a;">-₹${couponDiscount.toLocaleString("en-IN")}</td></tr>` : ""}
+            <tr style="border-top:2px solid #c2410c;">
+              <td style="padding:12px 0;font-size:16px;font-weight:700;color:#333;">Grand Total</td>
+              <td style="padding:12px 0;text-align:right;font-size:18px;font-weight:800;color:#c2410c;">₹${order.totalAmount.toLocaleString("en-IN")}</td>
+            </tr>
+          </table>
         </div>
-        <div style="margin-top:40px;text-align:center;color:#999;font-size:11px;">
-          <p>Thank you for shopping with TheIdeaDecorator!</p>
-          <button onclick="window.print()" style="margin-top:10px;padding:8px 20px;background:#c2410c;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">Print Invoice</button>
+
+        <!-- Footer -->
+        <div style="border-top:1px solid #e5e7eb;padding-top:20px;margin-top:20px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:11px;color:#888;">
+            <div>
+              <p style="margin:0 0 4px;font-weight:600;color:#666;">Terms & Conditions</p>
+              <p style="margin:0;line-height:1.5;">• 7-day return policy for direct purchases<br>• Refunds processed within 5-7 business days<br>• For queries, contact support@theideadecorator.in</p>
+            </div>
+            <div style="text-align:right;">
+              <p style="margin:0 0 4px;font-weight:600;color:#666;">Contact Us</p>
+              <p style="margin:0;line-height:1.5;">theideadecorator.in<br>+91 7892430507<br>support@theideadecorator.in</p>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:25px;padding-top:15px;border-top:1px solid #f0f0f0;">
+            <p style="font-size:12px;color:#666;margin:0 0 5px;">Thank you for shopping with <strong style="color:#c2410c;">TheIdeaDecorator</strong>!</p>
+            <p style="font-size:10px;color:#aaa;margin:0;">This is a computer-generated invoice and does not require a signature.</p>
+            <button onclick="window.print()" class="no-print" style="margin-top:15px;padding:10px 28px;background:#c2410c;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🖨️ Print Invoice</button>
+          </div>
         </div>
       </div>
     </body></html>`;
