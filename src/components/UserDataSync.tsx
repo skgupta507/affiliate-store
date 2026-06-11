@@ -9,8 +9,7 @@ import { getUserData, saveUserData, subscribeToUserData } from "@/lib/supabase-d
  * Syncs user-specific data (cart, addresses, orders, wishlist, watchlists)
  * with Supabase for cross-device persistence.
  * 
- * Only activates when a user is logged in.
- * Uses the user's email as the unique key.
+ * Completely error-safe — will never break the app even if Supabase is misconfigured.
  */
 export function UserDataSync() {
   const isUserLoggedIn = useStore((s) => s.isUserLoggedIn);
@@ -25,11 +24,15 @@ export function UserDataSync() {
   const initialized = useRef(false);
   const skipSync = useRef(false);
   const prevDataHash = useRef("");
+  const syncFailed = useRef(false); // If sync fails once, stop retrying to avoid error spam
   const userId = currentUser?.uid || currentUser?.email || "";
 
-  // Get a hash of current user data to detect changes
   const getDataHash = () => {
-    return JSON.stringify({ cart, addresses, orders, wishlist, watchlists, recentlyViewed });
+    try {
+      return JSON.stringify({ cart, addresses, orders, wishlist, watchlists, recentlyViewed });
+    } catch {
+      return "";
+    }
   };
 
   // Load user data from Supabase on login
@@ -42,77 +45,85 @@ export function UserDataSync() {
     let mounted = true;
 
     async function loadUserData() {
-      const data = await getUserData(userId);
-      if (!mounted) return;
+      try {
+        const data = await getUserData(userId);
+        if (!mounted) return;
 
-      if (data) {
-        skipSync.current = true;
-        const state: Record<string, unknown> = {};
-        if (data.cart && Array.isArray(data.cart) && data.cart.length > 0) {
-          state.cart = data.cart;
-        }
-        if (data.addresses && Array.isArray(data.addresses) && data.addresses.length > 0) {
-          state.addresses = data.addresses;
-        }
-        if (data.orders && Array.isArray(data.orders) && data.orders.length > 0) {
-          state.orders = data.orders;
-        }
-        if (data.wishlist && Array.isArray(data.wishlist) && data.wishlist.length > 0) {
-          state.wishlist = data.wishlist;
-        }
-        if (data.watchlists && Array.isArray(data.watchlists) && data.watchlists.length > 0) {
-          state.watchlists = data.watchlists;
-        }
-        if (data.recently_viewed && Array.isArray(data.recently_viewed) && data.recently_viewed.length > 0) {
-          state.recentlyViewed = data.recently_viewed;
+        if (data) {
+          skipSync.current = true;
+          const state: Record<string, unknown> = {};
+          if (data.cart && Array.isArray(data.cart) && data.cart.length > 0) state.cart = data.cart;
+          if (data.addresses && Array.isArray(data.addresses) && data.addresses.length > 0) state.addresses = data.addresses;
+          if (data.orders && Array.isArray(data.orders) && data.orders.length > 0) state.orders = data.orders;
+          if (data.wishlist && Array.isArray(data.wishlist) && data.wishlist.length > 0) state.wishlist = data.wishlist;
+          if (data.watchlists && Array.isArray(data.watchlists) && data.watchlists.length > 0) state.watchlists = data.watchlists;
+          if (data.recently_viewed && Array.isArray(data.recently_viewed) && data.recently_viewed.length > 0) state.recentlyViewed = data.recently_viewed;
+
+          if (Object.keys(state).length > 0) {
+            useStore.setState(state);
+          }
+        } else {
+          // Try to push local data — if this fails (RLS), just skip silently
+          try {
+            const localState = useStore.getState();
+            await saveUserData(userId, {
+              cart: localState.cart,
+              addresses: localState.addresses,
+              orders: localState.orders,
+              wishlist: localState.wishlist,
+              watchlists: localState.watchlists,
+              recently_viewed: localState.recentlyViewed,
+            });
+          } catch {
+            syncFailed.current = true;
+          }
         }
 
-        if (Object.keys(state).length > 0) {
-          useStore.setState(state);
-        }
-      } else {
-        // No data in Supabase yet — push local data up
-        const localState = useStore.getState();
-        await saveUserData(userId, {
-          cart: localState.cart,
-          addresses: localState.addresses,
-          orders: localState.orders,
-          wishlist: localState.wishlist,
-          watchlists: localState.watchlists,
-          recently_viewed: localState.recentlyViewed,
-        });
+        prevDataHash.current = getDataHash();
+        initialized.current = true;
+      } catch (err) {
+        // Supabase failed (RLS, network, etc.) — just continue without sync
+        console.warn("UserDataSync: Failed to load, continuing offline", err);
+        syncFailed.current = true;
+        initialized.current = true;
       }
-
-      prevDataHash.current = getDataHash();
-      initialized.current = true;
     }
 
     loadUserData();
 
-    // Subscribe to real-time changes from other devices
-    const unsub = subscribeToUserData(userId, (data) => {
-      if (!mounted) return;
-      skipSync.current = true;
-      const state: Record<string, unknown> = {};
-      if (data.cart) state.cart = data.cart;
-      if (data.addresses) state.addresses = data.addresses;
-      if (data.orders) state.orders = data.orders;
-      if (data.wishlist) state.wishlist = data.wishlist;
-      if (data.watchlists) state.watchlists = data.watchlists;
-      if (data.recently_viewed) state.recentlyViewed = data.recently_viewed;
-      useStore.setState(state);
-      prevDataHash.current = JSON.stringify(state);
-    });
+    // Subscribe to real-time changes (wrapped in try/catch)
+    let unsub = () => {};
+    try {
+      unsub = subscribeToUserData(userId, (data) => {
+        if (!mounted) return;
+        try {
+          skipSync.current = true;
+          const state: Record<string, unknown> = {};
+          if (data.cart) state.cart = data.cart;
+          if (data.addresses) state.addresses = data.addresses;
+          if (data.orders) state.orders = data.orders;
+          if (data.wishlist) state.wishlist = data.wishlist;
+          if (data.watchlists) state.watchlists = data.watchlists;
+          if (data.recently_viewed) state.recentlyViewed = data.recently_viewed;
+          useStore.setState(state);
+          prevDataHash.current = JSON.stringify(state);
+        } catch {
+          // Ignore subscription errors
+        }
+      });
+    } catch {
+      // Subscription setup failed — continue without real-time sync
+    }
 
     return () => {
       mounted = false;
-      unsub();
+      try { unsub(); } catch {}
     };
   }, [isUserLoggedIn, userId]);
 
   // Sync local changes to Supabase
   useEffect(() => {
-    if (!hasSupabase || !isUserLoggedIn || !userId || !initialized.current) return;
+    if (!hasSupabase || !isUserLoggedIn || !userId || !initialized.current || syncFailed.current) return;
 
     if (skipSync.current) {
       skipSync.current = false;
@@ -124,7 +135,6 @@ export function UserDataSync() {
     if (currentHash === prevDataHash.current) return;
     prevDataHash.current = currentHash;
 
-    // Debounce: save after a short delay to batch rapid changes
     const timeout = setTimeout(() => {
       saveUserData(userId, {
         cart,
@@ -133,8 +143,11 @@ export function UserDataSync() {
         wishlist,
         watchlists,
         recently_viewed: recentlyViewed,
+      }).catch(() => {
+        // If save fails (RLS policy), stop trying
+        syncFailed.current = true;
       });
-    }, 500);
+    }, 1000);
 
     return () => clearTimeout(timeout);
   }, [cart, addresses, orders, wishlist, watchlists, recentlyViewed, isUserLoggedIn, userId]);

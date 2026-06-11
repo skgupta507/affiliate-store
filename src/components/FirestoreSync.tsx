@@ -17,14 +17,14 @@ import {
 
 /**
  * Syncs Zustand store with Supabase for cross-device persistence.
- * - On mount: fetches all data from Supabase and subscribes to real-time changes.
- * - On local changes: writes to Supabase automatically.
+ * Completely error-safe — will never break navigation or interactivity.
  */
 export function FirestoreSync() {
   const initialized = useRef(false);
   const prevProductIds = useRef<string>("");
   const prevCategoryIds = useRef<string>("");
   const skipNextSync = useRef(false);
+  const syncFailed = useRef(false);
 
   const products = useStore((s) => s.products);
   const categories = useStore((s) => s.categories);
@@ -36,79 +36,91 @@ export function FirestoreSync() {
     let mounted = true;
 
     async function init() {
-      // Fetch initial data
-      const [dbProducts, dbCategories] = await Promise.all([
-        getAllProducts(),
-        getAllCategories(),
-      ]);
+      try {
+        const [dbProducts, dbCategories] = await Promise.all([
+          getAllProducts(),
+          getAllCategories(),
+        ]);
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      if (dbProducts.length > 0) {
-        skipNextSync.current = true;
-        useStore.setState({ products: dbProducts });
-        prevProductIds.current = JSON.stringify(dbProducts.map((p) => `${p.id}:${p.updatedAt}`).sort());
-      } else {
-        // If Supabase is empty but local has data, push local to Supabase
-        const localProducts = useStore.getState().products;
-        if (localProducts.length > 0) {
-          for (const p of localProducts) {
-            await saveProduct(p);
+        if (dbProducts.length > 0) {
+          skipNextSync.current = true;
+          useStore.setState({ products: dbProducts });
+          prevProductIds.current = JSON.stringify(dbProducts.map((p) => `${p.id}:${p.updatedAt}`).sort());
+        } else {
+          const localProducts = useStore.getState().products;
+          if (localProducts.length > 0) {
+            for (const p of localProducts) {
+              try { await saveProduct(p); } catch { syncFailed.current = true; break; }
+            }
           }
+          prevProductIds.current = JSON.stringify(localProducts.map((p) => `${p.id}:${p.updatedAt}`).sort());
         }
-        prevProductIds.current = JSON.stringify(localProducts.map((p) => `${p.id}:${p.updatedAt}`).sort());
-      }
 
-      if (dbCategories.length > 0) {
-        skipNextSync.current = true;
-        useStore.setState({ categories: dbCategories });
-        prevCategoryIds.current = JSON.stringify(dbCategories.map((c) => c.id).sort());
-      } else {
-        const localCategories = useStore.getState().categories;
-        for (const c of localCategories) {
-          await saveCategory(c);
+        if (dbCategories.length > 0) {
+          skipNextSync.current = true;
+          useStore.setState({ categories: dbCategories });
+          prevCategoryIds.current = JSON.stringify(dbCategories.map((c) => c.id).sort());
+        } else {
+          const localCategories = useStore.getState().categories;
+          for (const c of localCategories) {
+            try { await saveCategory(c); } catch { syncFailed.current = true; break; }
+          }
+          prevCategoryIds.current = JSON.stringify(localCategories.map((c) => c.id).sort());
         }
-        prevCategoryIds.current = JSON.stringify(localCategories.map((c) => c.id).sort());
-      }
 
-      initialized.current = true;
+        initialized.current = true;
+      } catch (err) {
+        console.warn("FirestoreSync: Init failed, continuing offline", err);
+        syncFailed.current = true;
+        initialized.current = true;
+      }
     }
 
     init();
 
-    // Real-time subscriptions
-    const unsubProducts = subscribeToProducts((dbProducts) => {
-      if (!mounted) return;
-      skipNextSync.current = true;
-      useStore.setState({ products: dbProducts });
-      prevProductIds.current = JSON.stringify(dbProducts.map((p) => `${p.id}:${p.updatedAt}`).sort());
-    });
+    // Real-time subscriptions (wrapped for safety)
+    let unsubProducts = () => {};
+    let unsubCategories = () => {};
 
-    const unsubCategories = subscribeToCategories((dbCategories) => {
-      if (!mounted) return;
-      if (dbCategories.length > 0) {
-        skipNextSync.current = true;
-        useStore.setState({ categories: dbCategories });
-        prevCategoryIds.current = JSON.stringify(dbCategories.map((c) => c.id).sort());
-      }
-    });
+    try {
+      unsubProducts = subscribeToProducts((dbProducts) => {
+        if (!mounted) return;
+        try {
+          skipNextSync.current = true;
+          useStore.setState({ products: dbProducts });
+          prevProductIds.current = JSON.stringify(dbProducts.map((p) => `${p.id}:${p.updatedAt}`).sort());
+        } catch {}
+      });
+
+      unsubCategories = subscribeToCategories((dbCategories) => {
+        if (!mounted) return;
+        try {
+          if (dbCategories.length > 0) {
+            skipNextSync.current = true;
+            useStore.setState({ categories: dbCategories });
+            prevCategoryIds.current = JSON.stringify(dbCategories.map((c) => c.id).sort());
+          }
+        } catch {}
+      });
+    } catch {}
 
     return () => {
       mounted = false;
-      unsubProducts();
-      unsubCategories();
+      try { unsubProducts(); } catch {}
+      try { unsubCategories(); } catch {}
     };
   }, []);
 
   // Sync product changes to Supabase
   useEffect(() => {
-    if (!hasSupabase || !initialized.current) return;
+    if (!hasSupabase || !initialized.current || syncFailed.current) return;
     if (skipNextSync.current) {
       skipNextSync.current = false;
       return;
     }
 
-    // Use a hash that includes product data (updatedAt changes on edit), not just IDs
     const currentHash = JSON.stringify(products.map((p) => `${p.id}:${p.updatedAt}`).sort());
     if (currentHash === prevProductIds.current) return;
 
@@ -116,22 +128,21 @@ export function FirestoreSync() {
       (() => {
         try {
           const parsed = JSON.parse(prevProductIds.current || "[]");
-          // Handle both old format (just IDs) and new format (id:updatedAt)
           return parsed.map((s: string) => s.split(":")[0]);
         } catch { return []; }
       })()
     );
     const currentIdSet = new Set(products.map((p) => p.id));
 
-    // Save new/updated products
+    // Save new/updated products (don't await, fire and forget)
     for (const product of products) {
-      saveProduct(product);
+      saveProduct(product).catch(() => { syncFailed.current = true; });
     }
 
     // Delete removed products
     for (const id of prevIds) {
       if (!currentIdSet.has(id)) {
-        deleteProductFromDb(id);
+        deleteProductFromDb(id).catch(() => {});
       }
     }
 
@@ -140,24 +151,24 @@ export function FirestoreSync() {
 
   // Sync category changes to Supabase
   useEffect(() => {
-    if (!hasSupabase || !initialized.current) return;
+    if (!hasSupabase || !initialized.current || syncFailed.current) return;
     if (skipNextSync.current) return;
 
     const currentIds = JSON.stringify(categories.map((c) => c.id).sort());
     if (currentIds === prevCategoryIds.current) return;
 
     const prevIds = new Set<string>(
-      prevCategoryIds.current ? JSON.parse(prevCategoryIds.current) : []
+      (() => { try { return JSON.parse(prevCategoryIds.current || "[]"); } catch { return []; } })()
     );
     const currentIdSet = new Set(categories.map((c) => c.id));
 
     for (const cat of categories) {
-      saveCategory(cat);
+      saveCategory(cat).catch(() => { syncFailed.current = true; });
     }
 
     for (const id of prevIds) {
       if (!currentIdSet.has(id)) {
-        deleteCategoryFromDb(id);
+        deleteCategoryFromDb(id).catch(() => {});
       }
     }
 
