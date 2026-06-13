@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,21 +21,26 @@ import {
 
 export default function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
-  const { blogPosts, products, updateBlogPost } = useStore();
+  const { blogPosts, products } = useStore();
   const post = blogPosts.find((p) => p.slug === slug && p.isPublished);
+
+  // Increment views in useEffect (NEVER call setState/store actions during render)
+  useEffect(() => {
+    if (post) {
+      useStore.getState().updateBlogPost(post.id, { views: post.views + 1 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
 
   if (!post) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-20 text-center">
         <h1 className="text-2xl font-bold text-foreground mb-4">Article Not Found</h1>
-        <Link href="/blog"><Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" /> Back to Blog</Button></Link>
+        <Link href="/blog">
+          <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" /> Back to Blog</Button>
+        </Link>
       </div>
     );
-  }
-
-  // Increment views
-  if (typeof window !== "undefined") {
-    updateBlogPost(post.id, { views: post.views + 1 });
   }
 
   const relatedProducts = post.relatedProducts
@@ -43,6 +48,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
     : [];
 
   const handleShare = async () => {
+    if (typeof window === "undefined") return;
     if (navigator.share) {
       await navigator.share({ title: post.title, text: post.excerpt, url: window.location.href });
     } else {
@@ -91,8 +97,10 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
           )}
 
           {/* Content */}
-          <div className="prose prose-sm dark:prose-invert max-w-none mb-12">
-            <div dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, "<br/>") }} />
+          <div className="prose prose-sm dark:prose-invert max-w-none mb-12 text-muted-foreground leading-relaxed space-y-4">
+            {post.content.split("\n\n").map((paragraph, i) => (
+              <p key={i} className="text-sm leading-relaxed whitespace-pre-line">{paragraph}</p>
+            ))}
           </div>
 
           {/* Tags */}

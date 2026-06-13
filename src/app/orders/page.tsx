@@ -346,6 +346,11 @@ function OrdersContent() {
                           size="sm"
                           onClick={() => {
                             cancelOrder(order.id);
+                            // Deduct loyalty points that were earned for this order (1 point per ₹10)
+                            const pointsToDeduct = Math.floor(order.totalAmount / 10);
+                            if (pointsToDeduct > 0) {
+                              useStore.getState().redeemLoyaltyPoints(pointsToDeduct);
+                            }
                             // Send cancellation email
                             const email = order.customerEmail || (order.userId?.includes("@") ? order.userId : null) || currentUser?.email;
                             if (email) {
