@@ -60,6 +60,7 @@ export interface Order {
   couponCode?: string;
   couponDiscount?: number;
   userId?: string;
+  customerEmail?: string; // Always stored so status emails can be sent
 }
 
 export interface OrderItem {

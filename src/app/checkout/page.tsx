@@ -107,6 +107,11 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!selectedAddress) return;
 
+    // COD limit: not available on orders above ₹5,000
+    if (paymentMethod === "cod" && total > 5000) {
+      return; // Silently block — UI already shows it disabled
+    }
+
     const createOrder = () => {
       const order: Order = {
         id: generateId(),
@@ -128,6 +133,7 @@ export default function CheckoutPage() {
         couponCode: appliedCoupon?.code,
         couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
         userId: currentUser?.uid || currentUser?.email,
+        customerEmail: currentUser?.email,
       };
 
       addOrder(order);
@@ -418,21 +424,27 @@ export default function CheckoutPage() {
                   {[
                     { id: "razorpay", label: "Pay Online (Razorpay)", desc: "UPI, Cards, Net Banking, Wallets" },
                     { id: "payu", label: "Pay Online (PayU)", desc: "UPI, Cards, Net Banking, EMI" },
-                    { id: "cod", label: "Cash on Delivery", desc: "Pay when you receive" },
-                  ].map((method) => (
+                    { id: "cod", label: "Cash on Delivery", desc: total > 5000 ? `Not available on orders above ₹5,000` : "Pay when you receive" },
+                  ].map((method) => {
+                    const isCODDisabled = method.id === "cod" && total > 5000;
+                    return (
                     <button
                       key={method.id}
-                      onClick={() => setPaymentMethod(method.id)}
+                      onClick={() => !isCODDisabled && setPaymentMethod(method.id)}
+                      disabled={isCODDisabled}
                       className={`w-full text-left p-4 rounded-xl border transition-all ${
-                        paymentMethod === method.id
+                        isCODDisabled
+                          ? "border-border bg-secondary opacity-50 cursor-not-allowed"
+                          : paymentMethod === method.id
                           ? "border-primary/50 bg-primary/5"
                           : "border-border bg-card hover:border-border"
                       }`}
                     >
                       <p className="text-sm font-medium text-foreground">{method.label}</p>
-                      <p className="text-xs text-muted-foreground">{method.desc}</p>
+                      <p className={`text-xs ${isCODDisabled ? "text-red-400" : "text-muted-foreground"}`}>{method.desc}</p>
                     </button>
-                  ))}
+                  );
+                  })}
                 </div>
 
                 <div className="flex gap-3">

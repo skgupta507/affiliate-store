@@ -58,10 +58,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     if (product) {
-      addToRecentlyViewed(product.id);
-      incrementViewCount(product.id);
+      // Use getState() to call store actions without them being dependencies
+      // This prevents the infinite loop caused by function references changing on every render
+      useStore.getState().addToRecentlyViewed(product.id);
+      useStore.getState().incrementViewCount(product.id);
     }
-  }, [product, addToRecentlyViewed, incrementViewCount]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]); // only re-run when the product id changes
 
   if (!product) {
     return (

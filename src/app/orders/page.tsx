@@ -341,7 +341,28 @@ function OrdersContent() {
                     <div className="flex items-center gap-2">
                       {/* Action Buttons */}
                       {(order.status === "pending" || order.status === "confirmed") && (
-                        <Button variant="ghost" size="sm" onClick={() => cancelOrder(order.id)} className="text-red-400 hover:text-red-300 text-xs h-8">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            cancelOrder(order.id);
+                            // Send cancellation email
+                            const email = order.customerEmail || (order.userId?.includes("@") ? order.userId : null) || currentUser?.email;
+                            if (email) {
+                              fetch("/api/send-status-email", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  email,
+                                  customerName: order.shippingAddress.fullName,
+                                  orderId: order.id,
+                                  status: "cancelled",
+                                }),
+                              }).catch(() => {});
+                            }
+                          }}
+                          className="text-red-400 hover:text-red-300 text-xs h-8"
+                        >
                           <XCircle className="w-3.5 h-3.5 mr-1" /> Cancel
                         </Button>
                       )}

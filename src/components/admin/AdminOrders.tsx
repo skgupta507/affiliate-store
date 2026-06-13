@@ -26,8 +26,8 @@ export function AdminOrders() {
   const handleStatusChange = (order: Order, newStatus: Order["status"]) => {
     updateOrderStatus(order.id, newStatus);
 
-    // Send status email to customer (fire and forget)
-    const customerEmail = order.userId || "";
+    // Use customerEmail (always stored) or fall back to userId if it's an email
+    const customerEmail = order.customerEmail || (order.userId?.includes("@") ? order.userId : null);
     if (customerEmail) {
       fetch("/api/send-status-email", {
         method: "POST",
